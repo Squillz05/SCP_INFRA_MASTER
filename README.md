@@ -8,7 +8,6 @@ This repository contains the complete infrastructure automation for the SCP Echo
 
 ```
 scpinfra/
-.
 ├── 1-ServiceDocumentation&Notes
 │   └── ...
 ├── inventory
