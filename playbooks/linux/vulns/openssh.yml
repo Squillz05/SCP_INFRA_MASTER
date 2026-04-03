@@ -1,0 +1,12 @@
+---
+
+- name: Setup OpenSSH Competition Vulnerabilities
+  hosts: openssh_servers
+  vars_files:
+    - ../../../vars/linux/vulns/openssh.yml
+  tasks:
+    - name: Load Vulnerability Tasks
+      ansible.builtin.include_role:
+        name: linux/openssh
+        tasks_from: vulns
+        
