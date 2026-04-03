@@ -1,0 +1,44 @@
+---
+# ==============================================
+# Author: Andrew Xie
+# Date Created: 03/26/2026
+# Create vulnerabilities in the Active Directory Domain Controller
+#
+# Vulnerabilities include:
+# - Disabled SMB/LDAP Signing
+# - Weak service account passwords
+# ==============================================
+
+vulnerable_gpo_settings:
+  - name: "Disable SMB Signing"
+    key: 'HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters'
+    value_name: "SMB1"
+    type: "DWORD"
+    value: 0
+  - name: "Disable SMB2 Signing"
+    key: 'HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters'
+    value_name: "SMB2"
+    type: "DWORD"
+    value: 0
+  - name: "Disable LDAP Signing"
+    key: 'HKLM\SYSTEM\CurrentControlSet\Services\NTDS\Parameters'
+    value_name: "LDAPServerIntegrity"
+    type: "DWORD"
+    value: 0
+  - name: "Enable LLMNR"
+    key: 'HKLM\SYSTEM\CurrentControlSet\Services\DNSClient\Parameters'
+    value_name: "EnableMulticast"
+    type: "DWORD"
+    value: 1
+
+vulnerable_users:
+  - username: "sql_admin"
+    password: "badpasswd"
+    spn: "MSSQLSvc/sql01.scp.com:1433"
+    description: "SQL Service Account"
+    ou: "OU=Service Accounts,DC=scp,DC=com"
+  - username: "web_admin"
+    password: "badpasswd"
+    spn: "HTTP/web01.scp.com"
+    description: "Web Service Account"
+    ou: "OU=Service Accounts,DC=scp,DC=com"

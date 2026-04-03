@@ -1,0 +1,244 @@
+---
+# ========================================================
+# Role: scoring-engine
+# Description: Deploys the SCP Foundation Scoring Engine
+#              on an Ubuntu 22.04 scoring host VM.
+# Author: Koy Monette
+# Date Created: 04/02/2026
+#
+# Installs:
+#   - Python 3, pip, venv
+#   - smbclient (for SMB share check)
+#   - netcat-openbsd (used remotely on OpenVPN host — noted in docs)
+#   - Scoring engine source from control machine
+#   - Flask dashboard as a systemd service
+#   - Scorer as a systemd service
+# ========================================================
+
+# ----------------------------------------------------------
+# 1. System packages
+# ----------------------------------------------------------
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install required system packages
+  ansible.builtin.apt:
+    name:
+      - python3
+      - python3-pip
+      - python3-venv
+      - smbclient          # SMB share accessibility check
+      - netcat-openbsd     # Used in OpenVPN mgmt check via SSH
+      - curl               # Useful for manual reset testing
+      - git
+    state: present
+
+# ----------------------------------------------------------
+# 2. Scorer system user and directories
+# ----------------------------------------------------------
+- name: Create scorer system user
+  ansible.builtin.user:
+    name: scorer
+    system: true
+    shell: /bin/false
+    home: "{{ scoring_install_dir }}"
+    create_home: false
+
+- name: Create scoring engine directory structure
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: scorer
+    group: scorer
+    mode: '0755'
+  loop:
+    - "{{ scoring_install_dir }}"
+    - "{{ scoring_install_dir }}/engine"
+    - "{{ scoring_install_dir }}/checks"
+    - "{{ scoring_install_dir }}/templates"
+    - "{{ scoring_install_dir }}/config"
+    - "{{ scoring_install_dir }}/keys"
+
+# ----------------------------------------------------------
+# 3. Deploy scoring engine source files
+# ----------------------------------------------------------
+- name: Copy engine source files
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ scoring_install_dir }}/{{ item.dest }}"
+    owner: scorer
+    group: scorer
+    mode: '0644'
+  loop:
+    - { src: "engine/scorer.py",    dest: "engine/scorer.py" }
+    - { src: "engine/dashboard.py", dest: "engine/dashboard.py" }
+  notify: Restart scp-scorer
+
+- name: Copy check modules
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ scoring_install_dir }}/checks/{{ item | basename }}"
+    owner: scorer
+    group: scorer
+    mode: '0644'
+  with_fileglob:
+    - "checks/*.py"
+  notify: Restart scp-scorer
+
+- name: Copy dashboard template
+  ansible.builtin.copy:
+    src: "templates/dashboard.html"
+    dest: "{{ scoring_install_dir }}/templates/dashboard.html"
+    owner: scorer
+    group: scorer
+    mode: '0644'
+  notify: Restart scp-dashboard
+
+- name: Copy requirements.txt
+  ansible.builtin.copy:
+    src: "requirements.txt"
+    dest: "{{ scoring_install_dir }}/requirements.txt"
+    owner: scorer
+    group: scorer
+    mode: '0644'
+
+# ----------------------------------------------------------
+# 4. Python virtual environment and dependencies
+# ----------------------------------------------------------
+- name: Create Python virtual environment
+  ansible.builtin.command:
+    cmd: python3 -m venv {{ scoring_install_dir }}/venv
+    creates: "{{ scoring_install_dir }}/venv/bin/activate"
+  become_user: scorer
+
+- name: Install Python dependencies
+  ansible.builtin.pip:
+    requirements: "{{ scoring_install_dir }}/requirements.txt"
+    virtualenv: "{{ scoring_install_dir }}/venv"
+    virtualenv_python: python3
+  become_user: scorer
+
+# ----------------------------------------------------------
+# 5. SSH key for scored SSH users and OpenVPN mgmt check
+# ----------------------------------------------------------
+- name: Generate scorer SSH key (for SSH and OpenVPN checks)
+  ansible.builtin.command:
+    cmd: >
+      ssh-keygen -t rsa -b 4096
+      -f {{ scoring_install_dir }}/keys/scorer_rsa
+      -N "" -C "scp-scorer"
+    creates: "{{ scoring_install_dir }}/keys/scorer_rsa"
+
+- name: Set correct ownership and permissions on scorer SSH private key
+  ansible.builtin.file:
+    path: "{{ scoring_install_dir }}/keys/scorer_rsa"
+    owner: scorer
+    group: scorer
+    mode: '0600'
+
+- name: Set correct ownership and permissions on scorer SSH public key
+  ansible.builtin.file:
+    path: "{{ scoring_install_dir }}/keys/scorer_rsa.pub"
+    owner: scorer
+    group: scorer
+    mode: '0644'
+
+- name: Read scorer public key
+  ansible.builtin.slurp:
+    src: "{{ scoring_install_dir }}/keys/scorer_rsa.pub"
+  register: scorer_pubkey
+
+- name: Display scorer public key (add this to OpenVPN host if using key auth)
+  ansible.builtin.debug:
+    msg:
+      - "Scorer public key (add to OpenVPN host if using key auth):"
+      - "{{ scorer_pubkey.content | b64decode | trim }}"
+
+# ----------------------------------------------------------
+# 6. Generate .env config file from vars
+# ----------------------------------------------------------
+- name: Deploy .env configuration file
+  ansible.builtin.template:
+    src: "env.j2"
+    dest: "{{ scoring_install_dir }}/config/.env"
+    owner: scorer
+    group: scorer
+    mode: '0600'
+  notify:
+    - Restart scp-scorer
+    - Restart scp-dashboard
+
+# ----------------------------------------------------------
+# 7. systemd service units
+# ----------------------------------------------------------
+- name: Deploy scp-scorer systemd service
+  ansible.builtin.template:
+    src: "scp-scorer.service.j2"
+    dest: /etc/systemd/system/scp-scorer.service
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart scp-scorer
+
+- name: Deploy scp-dashboard systemd service
+  ansible.builtin.template:
+    src: "scp-dashboard.service.j2"
+    dest: /etc/systemd/system/scp-dashboard.service
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart scp-dashboard
+
+- name: Enable and start scoring engine services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+  loop:
+    - scp-scorer
+    - scp-dashboard
+
+# ----------------------------------------------------------
+# 8. Verify dashboard is up
+# ----------------------------------------------------------
+- name: Wait for dashboard to become available
+  ansible.builtin.wait_for:
+    host: "127.0.0.1"
+    port: "{{ dashboard_port }}"
+    timeout: 30
+
+- name: Verify dashboard responds
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ dashboard_port }}/"
+    status_code: 200
+  register: dashboard_check
+  retries: 3
+  delay: 5
+
+- name: Display deployment summary
+  ansible.builtin.debug:
+    msg:
+      - "======================================================="
+      - "SCP Foundation Scoring Engine deployed successfully."
+      - "======================================================="
+      - "Host        : {{ inventory_hostname }}"
+      - "Install dir : {{ scoring_install_dir }}"
+      - "Dashboard   : http://{{ ansible_host }}:{{ dashboard_port }}"
+      - "DB path     : {{ scoring_db_path }}"
+      - "Check interval: {{ check_interval }}s"
+      - "-------------------------------------------------------"
+      - "Services scored:"
+      - "  AD    : {{ ad_host }}"
+      - "  Apache: {{ apache_host }}"
+      - "  SMTP  : {{ smtp_host }}"
+      - "  MySQL : {{ mysql_host }}"
+      - "  SMB   : {{ smb_host }}"
+      - "  SSH   : {{ ssh_host }}"
+      - "  VPN   : {{ openvpn_host }}"
+      - "-------------------------------------------------------"
+      - "To reset scoreboard:"
+      - "  curl -X POST http://{{ ansible_host }}:{{ dashboard_port }}/api/admin/reset"
+      - "======================================================="

@@ -1,0 +1,22 @@
+---
+# ==============================================
+# Author: Andrew Xie
+# Date Created: 03/30/2026
+# Create vulnerabilities in the SMB Server
+#
+# Vulnerabilities include:
+# - Disabled SMB Signing via GPO on the DC (affects all SMB servers joined to the domain)
+# - Weak local service account passwords
+# - Blank Password for Enabled Guest Account
+# - Sensitive Share exposed to Everyone with weak to no permissions
+# ==============================================
+
+smb_shares:
+  - name: "IT_Backup"
+    path: "C:\\Shares\\IT_Backup"
+    full_access: "Everyone"
+
+smb_local_users:
+  - username: "backupsvc"
+    password: "student"
+    groups: ["Administrators"]

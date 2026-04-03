@@ -1,0 +1,13 @@
+---
+# SMTP Server Vulnerabilities
+
+smtp_users:
+  - username: "mail_admin"
+    password: "mail123"          # Weak credential
+  - username: "svc_mail"
+    password: "password1"        # Weak service account
+  - username: "admin"
+    password: "admin"            # Default credential
+
+smtp_relay_domains:
+  - "*"                          # Open relay - accepts mail for any domain

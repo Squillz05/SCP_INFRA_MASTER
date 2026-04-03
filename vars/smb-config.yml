@@ -1,0 +1,40 @@
+---
+# ========================================================
+# SMB Server Configuration Variables
+# Used by: playbooks/setup-smb.yml → roles/smb
+# ========================================================
+
+smb_server_hostname: "SCP-SMB-01"
+smb_server_ip: "10.10.10.22"
+
+# Active Directory connectivity
+ad_domain_name: "scp.com"
+ad_netbios_name: "SCP"
+dc_ip_address: "10.10.10.21"
+
+# Domain admin credentials used for domain join
+domain_join_user: "GREYTEAM"
+domain_join_password: "DONOTTOUCH!!!@123$"
+
+# --------------------------------------------------------
+# SMB Shares
+# --------------------------------------------------------
+# full_access  : comma-separated accounts with Full Control on the share ACL
+# change_access: comma-separated accounts with Change access on the share ACL
+# read_access  : comma-separated accounts with Read access on the share ACL
+# ntfs_owner   : account granted FullControl in the NTFS ACL
+# --------------------------------------------------------
+smb_shares:
+  - name: "Public"
+    path: "C:\\Shares\\Public"
+    description: "Public share accessible by all domain users"
+    full_access: "SCP\\Domain Admins"
+    change_access: "SCP\\Domain Users"
+    read_access: "Everyone"
+    ntfs_owner: "SCP\\Domain Admins"
+
+  - name: "Confidential"
+    path: "C:\\Shares\\Confidential"
+    description: "Restricted share — admins only"
+    full_access: "SCP\\Domain Admins"
+    ntfs_owner: "SCP\\Domain Admins"

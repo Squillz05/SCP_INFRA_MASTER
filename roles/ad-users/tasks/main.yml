@@ -1,0 +1,66 @@
+---
+# ===================================
+# Author: Andrew Xie
+# Date Created: 03/26/2026
+#
+# Roles needed for AD User Creation in setup-ad.yml
+# Create the following:
+# - Organizational Units
+# - Domain Admins group
+# - Domain Admin user(s)
+# - Standard users with group memberships
+# ===================================
+
+- name: Add weak password policy
+  ansible.windows.win_shell: |
+    Import-Module ActiveDirectory
+    Set-ADDefaultDomainPasswordPolicy -Identity "{{ domain_name }}" `
+      -MinPasswordLength 5 `
+      -ComplexityEnabled $false `
+      -LockoutThreshold 5 `
+      -MaxPasswordAge 0
+
+- name: Create Organizational Units
+  ansible.windows.win_shell: |
+    Import-Module ActiveDirectory
+    try {
+      Get-ADOrganizationalUnit -Identity "{{ item.path }}" -ErrorAction Stop
+    } catch {
+      New-ADOrganizationalUnit -Name "{{ item.name }}" -Path "{{ item.path.split(',', 1)[1] }}" -ProtectedFromAccidentalDeletion $false
+    }
+  loop: "{{ organizational_units }}"
+
+- name: Create department groups
+  ansible.windows.win_shell: |
+    Import-Module ActiveDirectory
+    $groupName = "{{ item.name }}"
+    $ouPath = "{{ item.path }}"
+    try {
+      Get-ADGroup -Identity "$groupName" -ErrorAction Stop
+    } catch {
+      New-ADGroup -Name $groupName -Path $ouPath -GroupScope Global
+    }
+  loop: "{{ domain_groups }}"
+
+- name: Create domain users
+  community.windows.win_domain_user:
+    name: "{{ item.username }}"
+    password: "{{ item.password }}"
+    firstname: "{{ item.firstname }}"
+    surname: "{{ item.lastname }}"
+    sam_account_name: "{{ item.username }}"
+    state: present
+    path: "{{ item.ou }}"
+    password_never_expires: false
+    user_cannot_change_password: false
+    enabled: true
+  loop: "{{ domain_users }}"
+
+- name: Add users to groups
+  community.windows.win_domain_group_membership:
+    name: "{{ item.1 }}"
+    members:
+      - "{{ item.0.username }}"
+    state: present
+  loop: "{{ domain_users | subelements('groups', skip_missing=True) }}"
+  when: item.0.groups is defined

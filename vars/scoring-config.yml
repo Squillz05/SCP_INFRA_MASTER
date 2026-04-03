@@ -1,0 +1,91 @@
+---
+# ========================================================
+# Scoring Engine Configuration Variables
+# Used by: playbooks/setup-scoring.yml → roles/scoring-engine
+# Author: Koy Monette
+# ========================================================
+# Fill in all values before running setup-scoring.yml.
+# IPs must match the actual OpenStack floating/fixed IPs
+# assigned to each competition VM.
+# ========================================================
+
+# ── Install location ──────────────────────────────────────────
+scoring_install_dir: /opt/scp-scoring
+scoring_db_path: /opt/scp-scoring/scoring.db
+
+# ── Engine settings ───────────────────────────────────────────
+# 60 = 1 minute (competition), 30 = faster for testing
+check_interval: 60
+history_hours: 4
+
+# ── Dashboard ─────────────────────────────────────────────────
+dashboard_host: "0.0.0.0"
+dashboard_port: 5000
+
+# ══════════════════════════════════════════════════════════════
+# SERVICE HOSTS
+# Match these to your actual OpenStack VM IPs
+# ══════════════════════════════════════════════════════════════
+
+# SCP-DC-01 (Windows Server — AD, SMTP)
+ad_host: "10.10.10.21"
+smtp_host: "10.10.10.23"
+
+# SCP-SMB-01 (Windows Server — SMB)
+smb_host: "10.10.10.22"
+
+# SCP-APACHE-01 (Linux — Apache)
+apache_host: "10.10.10.101"
+
+# SCP-DATABASE-01 (Linux — MySQL)
+mysql_host: "10.10.10.102"
+
+# SCP-OPENSSH-01 (Ubuntu — SSH)
+ssh_host: "10.10.10.103"
+
+# SCP-OPENVPN-01 (Ubuntu — OpenVPN)
+openvpn_host: "10.10.10.104"
+
+# ══════════════════════════════════════════════════════════════
+# SERVICE CREDENTIALS
+# ══════════════════════════════════════════════════════════════
+
+# ── Apache ────────────────────────────────────────────────────
+# Word or phrase that must appear in the HTTP response body
+apache_keyword: "SCP Foundation"
+
+# ── SMTP ──────────────────────────────────────────────────────
+smtp_ehlo_domain: "scorer.scp.com"
+
+# ── MySQL ─────────────────────────────────────────────────────
+# Scorer DB user — must be created on the MySQL VM:
+#   CREATE USER 'scorer'@'%' IDENTIFIED BY '<password>';
+#   GRANT ALL ON foundation_db.* TO 'scorer'@'%';
+mysql_user: "scorer"
+mysql_pass: ""             # fill in before running
+mysql_db: "foundation_db"
+
+# ── SMB ───────────────────────────────────────────────────────
+# Name of the scored share (no slashes)
+smb_share: "Confidential"
+smb_user: ""               # blank = anonymous access
+smb_pass: ""
+
+# ── SSH scored users ──────────────────────────────────────────
+# ALL users must authenticate successfully for functional points.
+# Passwords to be set on SCP-OPENSSH-01
+ssh_users:
+  - username: "scp343"
+    password: ""           # fill in once decided
+  - username: "scp073"
+    password: ""           # fill in once decided
+
+# ── OpenVPN ───────────────────────────────────────────────────
+openvpn_port: 1194
+openvpn_proto: "udp"
+openvpn_mgmt_port: 7505
+# SSH into OpenVPN host to query management interface on 127.0.0.1
+# Use the same scorer user created on SCP-OPENVPN-01
+openvpn_ssh_user: "scorer"
+openvpn_ssh_pass: ""       # fill in, or leave blank to use key
+openvpn_ssh_key: "/opt/scp-scoring/keys/scorer_rsa"

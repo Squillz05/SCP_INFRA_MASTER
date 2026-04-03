@@ -1,0 +1,67 @@
+---
+# ========================================================
+# Default variables for scoring-engine role
+# Override in vars/scoring-config.yml
+# ========================================================
+
+# -- Install location --
+scoring_install_dir: /opt/scp-scoring
+scoring_db_path: /opt/scp-scoring/scoring.db
+
+# -- Engine settings --
+check_interval: 60        # seconds between check rounds
+history_hours: 4           # hours of history shown on dashboard
+
+# -- Dashboard --
+dashboard_host: "0.0.0.0"
+dashboard_port: 5000
+
+# -- Points (per service per check) --
+uptime_points: 30
+func_points: 30
+
+# --------------------------------------------------------
+# Service hosts — override in vars/scoring-config.yml
+# --------------------------------------------------------
+ad_host: "10.10.10.21"
+apache_host: "10.10.10.101"
+smtp_host: "10.10.10.23"
+mysql_host: "10.10.10.102"
+smb_host: "10.10.10.22"
+ssh_host: "10.10.10.103"
+openvpn_host: "10.10.10.104"
+
+# --------------------------------------------------------
+# Service credentials — override in vars/scoring-config.yml
+# --------------------------------------------------------
+
+# Apache
+apache_keyword: "SCP Foundation"
+
+# SMTP
+smtp_ehlo_domain: "scorer.scp.com"
+
+# MySQL
+mysql_user: "scorer"
+mysql_pass: ""
+mysql_db: "foundation_db"
+
+# SMB
+smb_share: "Confidential"
+smb_user: ""
+smb_pass: ""
+
+# SSH scored users
+ssh_users:
+  - username: "scp343"
+    password: ""
+  - username: "scp073"
+    password: ""
+
+# OpenVPN management via SSH
+openvpn_port: 1194
+openvpn_proto: "udp"
+openvpn_mgmt_port: 7505
+openvpn_ssh_user: "scorer"
+openvpn_ssh_pass: ""
+openvpn_ssh_key: "/opt/scp-scoring/keys/scorer_rsa"

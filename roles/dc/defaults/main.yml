@@ -1,0 +1,20 @@
+---
+ad_domain_name: "scp.com"
+ad_netbios_name: "SCP"
+ad_safe_mode_password: "DONOTTOUCH!!!@123$"
+
+servers:
+  - name: "SCP-DC-01"
+    ip_address: "10.10.10.21"
+  - name: "SCP-SMB-01"
+    ip_address: "10.10.10.22"
+  - name: "SCP-SMTP-01"
+    ip_address: "10.10.10.23"
+  - name: "SCP-APACHE-01"
+    ip_address: "10.10.10.101"
+  - name: "SCP-DATABASE-01"
+    ip_address: "10.10.10.102"
+  - name: "SCP-OPENSSH-01"
+    ip_address: "10.10.10.103"
+  - name: "SCP-OPENVPN-01"
+    ip_address: "10.10.10.104"

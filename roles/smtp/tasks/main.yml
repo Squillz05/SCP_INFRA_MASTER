@@ -1,0 +1,217 @@
+---
+# ========================================================
+# Author: Andrew Xie
+# Date Created: 03/26/2026
+# This role sets up a basic SMTP server using the IIS 6.0 SMTP virtual server included in Windows Server.
+#
+# Configure the following:
+# - Point DNS at the DC
+# - Join AD domain
+# - Install SMTP Server Windows feature (+ IIS mgmt tools)
+# - Ensure mailroot directories exist
+# - Configure the SMTP virtual server via registry/netsh
+# - Set relay restrictions to allow internal subnet only
+# - Configure accepted local domains
+# - Open Windows Firewall for SMTP (TCP 25)
+# - Enable and start the SMTPSVC service
+# ========================================================
+
+# ----------------------------------------------------------
+# 1. DNS → DC so domain resolution works before join
+# ----------------------------------------------------------
+- name: Set DNS server to DC IP
+  ansible.windows.win_shell: |
+    Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | ForEach-Object {
+      Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex `
+        -ServerAddresses ("{{ dc_ip_address }}", "8.8.8.8")
+    }
+  changed_when: false
+
+# ----------------------------------------------------------
+# 2. Join Active Directory domain
+# ----------------------------------------------------------
+- name: Check current domain membership
+  ansible.windows.win_shell: |
+    (Get-WmiObject Win32_ComputerSystem).Domain
+  register: current_domain
+  changed_when: false
+
+- name: Join the AD domain
+  ansible.windows.win_domain_membership:
+    dns_domain_name: "{{ ad_domain_name }}"
+    domain_admin_user: "{{ ad_netbios_name }}\\{{ domain_join_user }}"
+    domain_admin_password: "{{ domain_join_password }}"
+    ou_path: "{{ server_ou }}"
+    state: domain
+  register: domain_join
+
+# ----------------------------------------------------------
+# 3. Install IIS SMTP Server Windows feature
+# ----------------------------------------------------------
+- name: Install SMTP Server feature and IIS management tools
+  ansible.windows.win_feature:
+    name:
+      - SMTP-Server        # IIS 6 SMTP virtual server
+      - Web-Mgmt-Console   # IIS Manager (for manual admin)
+      - Web-Mgmt-Tools
+    include_management_tools: true
+    state: present
+  register: smtp_install
+
+- name: Reboot if feature installation requires it
+  ansible.windows.win_reboot:
+    reboot_timeout: 600
+  when: smtp_install.reboot_required
+
+- name: Ensure IISADMIN service is running before ADSI configuration
+  ansible.windows.win_service:
+    name: IISADMIN
+    state: started
+    start_mode: auto
+
+# ----------------------------------------------------------
+# 4. Ensure mailroot directory tree exists
+# ----------------------------------------------------------
+- name: Ensure mailroot subdirectories exist
+  ansible.windows.win_file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "{{ smtp_drop_dir }}"
+    - "{{ smtp_pickup_dir }}"
+    - "{{ smtp_queue_dir }}"
+    - "{{ smtp_badmail_dir }}"
+
+# ----------------------------------------------------------
+# 5. Configure SMTP virtual server settings via IIS WMI/ADSI
+#    The IIS 6 SMTP server is configured through the IIS ADSI
+#    provider (IIS://localhost/smtpsvc/1).
+# ----------------------------------------------------------
+- name: Configure SMTP virtual server properties
+  ansible.windows.win_shell: |
+    $smtpServer = [ADSI]"IIS://localhost/smtpsvc/1"
+
+    # Basic identity settings
+    $smtpServer.Put("ServerComment",   "SCP SMTP Server - {{ smtp_relay_domain }}")
+    $smtpServer.Put("MaxMessageSize",  {{ smtp_max_message_size_kb * 1024 }})
+    $smtpServer.Put("MaxSessionSize",  {{ smtp_max_session_size_kb * 1024 }})
+    $smtpServer.Put("MaxRecipients",   {{ smtp_max_recipients }})
+
+    # Bind to all IPs on the configured port
+    $smtpServer.Put("ServerBindings",  @(":{{ smtp_port }}:"))
+
+    # Directory paths
+    $smtpServer.Put("BadMailDirectory",   "{{ smtp_badmail_dir }}")
+    $smtpServer.Put("PickupDirectory",    "{{ smtp_pickup_dir }}")
+    $smtpServer.Put("QueueDirectory",     "{{ smtp_queue_dir }}")
+    $smtpServer.Put("DropDirectory",      "{{ smtp_drop_dir }}")
+
+    # Fully qualified domain name used in HELO/EHLO
+    $smtpServer.Put("FullyQualifiedDomainName", "{{ smtp_server_hostname }}.{{ ad_domain_name }}")
+
+    $smtpServer.SetInfo()
+    Write-Output "SMTP virtual server configured."
+  register: smtp_config
+  changed_when: "'configured' in smtp_config.stdout"
+
+# ----------------------------------------------------------
+# 6. Set relay restrictions
+# ----------------------------------------------------------
+- name: Configure SMTP relay restrictions
+  ansible.windows.win_shell: |
+    $smtpServer = [ADSI]"IIS://localhost/smtpsvc/1"
+
+    # RelayIpList: array of allowed relay IP strings
+    # GrantByDefault = 0 means DENY all except the list below
+    $smtpServer.Put("GrantByDefault", 1)
+    
+    $smtpServer.Put("RelayIpList", @(
+      {% for ip in smtp_relay_allowed_ips %}"{{ ip }}"{% if not loop.last %},{% endif %}{% endfor %}
+
+    ))
+    # 0 = relay granted only to IPs in RelayIpList
+    $smtpServer.Put("RelayForAuth", 1)         # allow authenticated users to relay
+    
+    $smtpServer.SetInfo()
+    Write-Output "Relay restrictions applied."
+  when: smtp_relay_allowed_ips | length > 0
+  register: relay_config
+  changed_when: "'applied' in relay_config.stdout"
+
+# ----------------------------------------------------------
+# 7. Add accepted local domains (virtual domains)
+# ----------------------------------------------------------
+- name: Create local SMTP domain entries
+  ansible.windows.win_shell: |
+    $domainPath = "IIS://localhost/smtpsvc/1/Domain/{{ item }}"
+    if (-not ([ADSI]::Exists($domainPath))) {
+      $domains = [ADSI]"IIS://localhost/smtpsvc/1/Domain"
+      $newDomain = $domains.Create("IIsSmtpDomain", "{{ item }}")
+      $newDomain.Put("RouteAction", 2)    # 2 = Drop to mailbox
+      $newDomain.SetInfo()
+      Write-Output "Domain {{ item }} created."
+    } else {
+      Write-Output "Domain {{ item }} already exists."
+    }
+  loop: "{{ smtp_local_domains }}"
+  register: domain_config
+  changed_when: "'created' in domain_config.stdout"
+
+# ----------------------------------------------------------
+# 8. Open Windows Firewall for SMTP (TCP 25)
+# ----------------------------------------------------------
+- name: Open inbound firewall for SMTP (TCP 25)
+  ansible.windows.win_shell: |
+    $ruleName = "Allow SMTP Inbound (TCP 25)"
+    if (-not (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
+      New-NetFirewallRule `
+        -DisplayName $ruleName `
+        -Direction Inbound `
+        -Protocol TCP `
+        -LocalPort {{ smtp_port }} `
+        -Action Allow
+      Write-Output "Firewall rule created."
+    } else {
+      Write-Output "Firewall rule already exists."
+    }
+  register: fw_result
+  changed_when: "'created' in fw_result.stdout"
+
+- name: Open outbound firewall for SMTP (TCP 25)
+  ansible.windows.win_shell: |
+    $ruleName = "Allow SMTP Outbound (TCP 25)"
+    if (-not (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
+      New-NetFirewallRule `
+        -DisplayName $ruleName `
+        -Direction Outbound `
+        -Protocol TCP `
+        -LocalPort {{ smtp_port }} `
+        -Action Allow
+      Write-Output "Firewall rule created."
+    } else {
+      Write-Output "Firewall rule already exists."
+    }
+  register: fw_out_result
+  changed_when: "'created' in fw_out_result.stdout"
+
+# ----------------------------------------------------------
+# 9. Start and enable the SMTP service (SMTPSVC)
+# ----------------------------------------------------------
+- name: Set SMTPSVC to start automatically and ensure it is running
+  ansible.windows.win_service:
+    name: SMTPSVC
+    start_mode: auto
+    state: started
+
+- name: Reboot if required after SMTPSVC configuration
+  ansible.windows.win_reboot:
+    reboot_timeout: 600
+
+# ----------------------------------------------------------
+# 10. Verify SMTP is listening on the configured port
+# ----------------------------------------------------------
+- name: Verify SMTP is listening on port {{ smtp_port }}
+  ansible.windows.win_wait_for:
+    port: "{{ smtp_port }}"
+    host: "127.0.0.1"
+    timeout: 60

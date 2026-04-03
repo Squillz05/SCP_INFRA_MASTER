@@ -1,0 +1,26 @@
+---
+# ====================================================
+# Linux Common Configuration Variables
+# Used By: playbooks/linux.yml -> roles/linux/common
+# ====================================================
+
+common_packages:
+  - "@Server"
+  - "git"
+
+dns: 1.1.1.1
+domain: "scp.com"
+
+users:
+  - username: "cyberrange"
+    password: "Cyberrange123!"
+    privileged: true
+  - username: "grayteam"
+    password: "DONOTTOUCH!!!@123$"
+    privileged: true
+  - username: "scp073"
+    password: "test1"
+    privileged: false
+  - username: "scp343"
+    password: "test2"
+    privileged: true

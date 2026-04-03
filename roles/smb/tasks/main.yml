@@ -1,0 +1,146 @@
+---
+# ========================================================
+# Author: Andrew Xie
+# Date Created: 03/26/2026
+#
+# This role sets up the SMB server with the necessary configurations to run without vulnerabilities.
+#
+# Configure the following:
+# - Set hostname and DNS to point at DC
+# - Join the AD domain
+# - Install the File-Services Windows feature
+# - Create share directories
+# - Create SMB shares with defined permissions
+# - Set NTFS ACLs on share directories
+# ========================================================
+
+# ----------------------------------------------------------
+# 1. Ensure DNS resolves through the DC so domain join works
+# ----------------------------------------------------------
+- name: Set DNS server to DC IP
+  ansible.windows.win_shell: |
+    Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | ForEach-Object {
+      Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex `
+        -ServerAddresses ("{{ dc_ip_address }}")
+    }
+  changed_when: false
+
+# ----------------------------------------------------------
+# 2. Join the Active Directory domain
+# ----------------------------------------------------------
+- name: Check current domain membership
+  ansible.windows.win_shell: |
+    (Get-WmiObject Win32_ComputerSystem).Domain
+  register: current_domain
+  changed_when: false
+
+- name: Join the AD domain
+  ansible.windows.win_domain_membership:
+    dns_domain_name: "{{ ad_domain_name }}"
+    domain_admin_user: "{{ ad_netbios_name }}\\{{ domain_join_user }}"
+    domain_admin_password: "{{ domain_join_password }}"
+    ou_path: "{{ server_ou }}"
+    state: domain
+  register: domain_join
+
+# - name: Join the AD domain using PowerShell
+#   ansible.windows.win_shell: |
+#     $domain = "{{ ad_domain_name }}"
+#     $netbios = "{{ ad_netbios_name }}"
+#     $path = "{{ server_ou }}"
+#     $username = "{{ domain_join_user }}"
+#     $password = "{{ domain_join_password }}"
+
+#     $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+#     $credential = New-Object System.Management.Automation.PSCredential("$netbios\\$username", $securePassword)
+
+#     Add-Computer -DomainName $domain -OUPath $path -Credential $credential -Restart -Force
+#   when: current_domain.stdout | trim | lower != ad_domain_name | lower
+
+# ----------------------------------------------------------
+# 3. Install Windows File Server features
+# ----------------------------------------------------------
+- name: Install File Server role and tools
+  ansible.windows.win_feature:
+    name:
+      - FS-FileServer
+      - FS-SMB1          # kept for lab compatibility; disable in production
+    include_management_tools: true
+    state: present
+  register: fs_install
+
+- name: Reboot if feature installation requires it
+  ansible.windows.win_reboot:
+    reboot_timeout: 600
+  when: fs_install.reboot_required
+
+# ----------------------------------------------------------
+# 4. Create share root directories
+# ----------------------------------------------------------
+- name: Create share directories
+  ansible.windows.win_file:
+    path: "{{ item.path }}"
+    state: directory
+  loop: "{{ smb_shares }}"
+
+# ----------------------------------------------------------
+# 5. Create SMB shares
+# ----------------------------------------------------------
+- name: Create SMB shares
+  ansible.windows.win_shell: |
+    $shareName = "{{ item.name }}"
+    $sharePath = "{{ item.path }}"
+    $description = "{{ item.description | default('') }}"
+
+    # Remove existing share if present so settings are idempotent
+    if (Get-SmbShare -Name $shareName -ErrorAction SilentlyContinue) {
+      Remove-SmbShare -Name $shareName -Force
+    }
+
+    New-SmbShare `
+      -Name $shareName `
+      -Path $sharePath `
+      -Description $description `
+      -FullAccess "{{ item.full_access | default('Administrators') }}" `
+      {% if item.read_access is defined %}-ReadAccess "{{ item.read_access }}" `{% endif %}
+      {% if item.change_access is defined %}-ChangeAccess "{{ item.change_access }}" `{% endif %}
+      -FolderEnumerationMode AccessBased
+  loop: "{{ smb_shares }}"
+
+# ----------------------------------------------------------
+# 6. Set NTFS permissions on share directories
+# ----------------------------------------------------------
+- name: Set NTFS ACLs on share directories
+  ansible.windows.win_acl:
+    path: "{{ item.path }}"
+    user: "{{ item.ntfs_owner | default('BUILTIN\\Administrators') }}"
+    rights: FullControl
+    type: allow
+    state: present
+    inherit: ContainerInherit, ObjectInherit
+    propagation: None
+  loop: "{{ smb_shares }}"
+
+# ----------------------------------------------------------
+# 7. Ensure SMB server service is running and set to auto-start
+# ----------------------------------------------------------
+- name: Ensure LanmanServer (SMB) service is running
+  ansible.windows.win_service:
+    name: LanmanServer
+    start_mode: auto
+    state: started
+
+# ----------------------------------------------------------
+# 8. Open firewall for SMB
+# ----------------------------------------------------------
+- name: Allow SMB through Windows Firewall
+  ansible.windows.win_shell: |
+    Enable-NetFirewallRule -DisplayGroup "File and Printer Sharing" -ErrorAction SilentlyContinue
+    New-NetFirewallRule `
+      -DisplayName "Allow SMB Inbound" `
+      -Direction Inbound `
+      -Protocol TCP `
+      -LocalPort 445 `
+      -Action Allow `
+      -ErrorAction SilentlyContinue
+  changed_when: false

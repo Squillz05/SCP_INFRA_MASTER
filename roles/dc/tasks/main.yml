@@ -1,0 +1,113 @@
+---
+# ========================================================
+# Author: Andrew Xie
+# Date Created: 03/26/2026
+#
+# This role sets up the Active Directory Domain Controller with the necessary configurations to run without vulnerabilities.
+# Configure the following:
+# - Domain Services
+# - DNS Services
+# - Domain Controller Promotion
+# - DNS Zone and Record Creation
+# ========================================================
+
+- name: Install AD Domain Services
+  ansible.windows.win_feature:
+    name: AD-Domain-Services
+    include_management_tools: true
+    include_sub_features: true
+    state: present
+  register: ad_install
+
+- name: Reboot if required after AD DS installation
+  ansible.windows.win_reboot:
+    reboot_timeout: 600
+  when: ad_install.reboot_required
+
+- name: Check if domain is already configured
+  ansible.windows.win_shell: |
+    try {
+      Get-ADDomain -ErrorAction Stop
+      Write-Output "exists"
+    } catch {
+      Write-Output "not_exists"
+    }
+  register: domain_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Promote server to Domain Controller
+  ansible.windows.win_shell: |
+    $SecurePassword = ConvertTo-SecureString "{{ ad_safe_mode_password }}" -AsPlainText -Force
+    Install-ADDSForest `
+      -DomainName "{{ ad_domain_name }}" `
+      -DomainNetbiosName "{{ ad_netbios_name }}" `
+      -ForestMode "WinThreshold" `
+      -DomainMode "WinThreshold" `
+      -InstallDns `
+      -SafeModeAdministratorPassword $SecurePassword `
+      -Force `
+      -NoRebootOnCompletion:$false
+  register: dc_promotion
+  when: domain_check.stdout | trim == "not_exists"
+
+# - name: Wait for DC promotion to complete (this may take 10-15 minutes)
+#   ansible.builtin.async_status:
+#     jid: "{{ dc_promotion.ansible_job_id }}"
+#   register: job_result
+#   until: job_result.finished
+#   retries: 90
+#   delay: 10
+#   when: domain_check.stdout | trim == "not_exists"
+
+- name: Wait for AD Web Services to be available
+  ansible.windows.win_wait_for:
+    port: 9389
+    timeout: 300
+  when: domain_check.stdout | trim == "not_exists"
+
+- name: Set DNS server to localhost
+  ansible.windows.win_shell: |
+    Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | ForEach-Object {
+      Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ServerAddresses ("{{ dc_ip_address }}", "8.8.8.8")
+    }
+
+- name: Configure DNS forwarder
+  ansible.windows.win_shell: |
+    Set-DnsServerForwarder -IPAddress "{{ dns_forwarder }}" -PassThru
+  failed_when: false
+
+- name: Create forward lookup zone
+  community.windows.win_dns_zone:
+    name: "{{ forward_zone }}"
+    type: Primary
+    dynamic_update: secure
+    replication: domain
+    state: present
+
+- name: Create reverse lookup zone
+  community.windows.win_dns_zone:
+    name: "{{ reverse_zone }}"
+    type: Primary
+    dynamic_update: secure
+    replication: domain
+    state: present
+
+- name: Create A records for DC
+  community.windows.win_dns_record:
+    zone: "{{ forward_zone }}"
+    name: "{{ item.name }}"
+    type: A
+    value: "{{ item.ip_address }}"
+    state: present
+  loop: "{{ servers }}"
+
+# This PTR record assumes a /24 subnet. Adjust the name field as necessary for different subnet sizes.
+- name: Create PTR record for DC
+  community.windows.win_dns_record:
+    zone: "{{ reverse_zone }}"
+    name: "{{ item.ip_address.split('.')[-1] }}"
+    type: PTR
+    value: "{{ item.name }}.{{ forward_zone }}"
+    state: present
+  loop: "{{ servers }}"

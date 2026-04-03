@@ -1,0 +1,46 @@
+---
+# ========================================================
+# Author: Andrew Xie
+# Date Created: 03/30/2026
+#
+# Vulnerabilities:
+# - Unauthenticated share enumeration
+# - Weak local admin credentials
+# - Overly permissive share ACLs
+# - Sensitive files left on shares
+# ========================================================
+
+- name: Create share directories
+  ansible.windows.win_file:
+    path: "{{ item.path }}"
+    state: directory
+  loop: "{{ smb_shares }}"
+
+- name: Create overly permissive SMB shares
+  ansible.windows.win_share:
+    name: "{{ item.name }}"
+    path: "{{ item.path }}"
+    full: "{{ item.full_access }}"
+    state: present
+  loop: "{{ smb_shares }}"
+
+- name: Drop fake sensitive files on shares (lure/pivot material)
+  ansible.windows.win_copy:
+    content: |
+      # IT Credentials (DO NOT SHARE)
+      dc_admin: overseer.scp / weakpassword123!
+      sql_admin: sql_admin / badpasswd
+    dest: "C:\\Shares\\IT_Backup\\credentials.txt"
+
+- name: Create weak local service account
+  ansible.windows.win_user:
+    name: "{{ item.username }}"
+    password: "{{ item.password }}"
+    password_never_expires: true
+    state: present
+    groups: "{{ item.groups }}"
+  loop: "{{ smb_local_users }}"
+
+- name: Disable Windows Defender
+  ansible.windows.win_shell: |
+    Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue

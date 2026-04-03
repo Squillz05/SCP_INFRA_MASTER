@@ -1,0 +1,59 @@
+---
+# ========================================================
+# SMTP Server Configuration Variables
+# Used by: playbooks/setup-smtp.yml → roles/smtp
+# ========================================================
+
+smtp_server_hostname: "SCP-SMTP-01"
+smtp_server_ip: "10.10.10.23"
+
+# Active Directory connectivity
+ad_domain_name: "scp.com"
+ad_netbios_name: "SCP"
+dc_ip_address: "10.10.10.21"
+
+# Domain admin credentials for domain join
+domain_join_user: "GREYTEAM"
+domain_join_password: "DONOTTOUCH!!!@123$"
+
+# --------------------------------------------------------
+# SMTP Virtual Server Settings
+# --------------------------------------------------------
+smtp_port: 25
+smtp_relay_domain: "scp.com"
+
+# Maximum individual message size (KB)
+smtp_max_message_size_kb: 10240       # 10 MB
+
+# Maximum total session transfer size (KB)
+smtp_max_session_size_kb: 102400      # 100 MB
+
+# Maximum number of recipients per message
+smtp_max_recipients: 100
+
+# --------------------------------------------------------
+# Mailroot directory paths (IIS SMTP defaults)
+# --------------------------------------------------------
+smtp_drop_dir:    "C:\\inetpub\\mailroot\\Drop"
+smtp_pickup_dir:  "C:\\inetpub\\mailroot\\Pickup"
+smtp_queue_dir:   "C:\\inetpub\\mailroot\\Queue"
+smtp_badmail_dir: "C:\\inetpub\\mailroot\\Badmail"
+
+# --------------------------------------------------------
+# Local domains this SMTP server accepts mail for.
+# The AD domain is always included; add any additional
+# virtual domains used in the competition topology here.
+# --------------------------------------------------------
+smtp_local_domains:
+  - "scp.com"
+
+# --------------------------------------------------------
+# IP ranges allowed to relay outbound mail through this server.
+# Hosts NOT in this list will be rejected for relay.
+# Use CIDR notation as single IPs — list each host/range
+# that legitimately needs to send mail through SCP-SMTP01.
+# --------------------------------------------------------
+smtp_relay_allowed_ips:
+  - "10.10.10.21"    # SCP-DC01
+  - "10.10.10.22"    # SCP-SMB01
+  - "127.0.0.1"  # localhost (for local application relay)

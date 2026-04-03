@@ -1,0 +1,47 @@
+---
+# ========================================================
+# Author: Andrew Xie
+# Date Created: 03/26/2026
+#
+# Role to add vulnerabilities to a DC
+# Configure the following:
+# - Weak Service Account Passwords
+# - Disabled SMB/LDAP Signing via GPO
+# - Weak password policies
+# - Disabled Windows Defender Antivirus
+# ========================================================
+
+- name: Configure vulnerable GPO settings
+  ansible.windows.win_shell: |
+    Import-Module GroupPolicy
+    # Create GPO if missing
+    if (-not (Get-GPO -Name "{{ item.name }}" -ErrorAction SilentlyContinue)) {
+      New-GPO -Name "{{ item.name }}"
+      New-GPLink -Name "{{ item.name }}" -Target "DC=scp,DC=com" -Enforced Yes
+    }
+
+    # Set registry value
+    Set-GPRegistryValue `
+      -Name "{{ item.name }}" `
+      -Key "{{ item.key }}" `
+      -ValueName "{{ item.value_name }}" `
+      -Type "{{ item.type }}" `
+      -Value {{ item.value }}
+  loop: "{{ vulnerable_gpo_settings }}"
+
+- name: Create AD service accounts with SPNs (Kerberoastable)
+  community.windows.win_domain_user:
+    name: "{{ item.username }}"
+    password: "{{ item.password }}"
+    user_cannot_change_password: false
+    password_never_expires: true
+    description: "{{ item.description }}"
+    path: "{{ item.ou }}"
+    state: present
+    spn:
+      - "{{ item.spn }}"
+  loop: "{{ vulnerable_users }}"
+
+- name: Disable Windows Defender
+  ansible.windows.win_shell: |
+    Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue

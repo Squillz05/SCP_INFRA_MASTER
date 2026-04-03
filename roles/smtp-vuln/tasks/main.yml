@@ -1,0 +1,92 @@
+---
+# ========================================================
+# Author: Andrew Xie
+# Date Created: 03/30/2026
+#
+# Vulnerabilities:
+# - Open SMTP relay (Initial Access / Pivoting vector)
+# - Weak/default credentials (Already Configured in AD)
+# - No authentication required for relay
+# - Email enumeration via VRFY/EXPN commands enabled
+# - Cleartext AUTH allowed (no TLS enforced)
+# - No rate limiting (spam/phishing platform)
+# ========================================================
+
+- name: Install IIS SMTP Feature
+  ansible.windows.win_feature:
+    name:
+      - SMTP-Server
+      - Web-Server
+    include_management_tools: true
+    state: present
+  register: smtp_install
+
+- name: Reboot if required
+  ansible.windows.win_reboot:
+    reboot_timeout: 600
+  when: smtp_install.reboot_required
+
+- name: Configure open relay via IIS SMTP (allow all connections)
+  ansible.windows.win_shell: |
+    Import-Module WebAdministration -ErrorAction SilentlyContinue
+    $smtpSvc = "SMTP Virtual Server"
+
+    # Allow relay from all IPs (open relay)
+    $adminBase = [System.Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory()
+    [System.Reflection.Assembly]::LoadFrom($adminBase + "System.DirectoryServices.dll") | Out-Null
+
+    $iis = New-Object System.DirectoryServices.DirectoryEntry("IIS://localhost/smtpsvc/1")
+    $iis.Put("RelayIpList", @())       # Empty = allow all
+    $iis.Put("RelayForAuth", 1)
+    $iis.SetInfo()
+
+- name: Disable SMTP authentication requirement
+  ansible.windows.win_shell: |
+    $iis = New-Object System.DirectoryServices.DirectoryEntry("IIS://localhost/smtpsvc/1")
+    $iis.Put("AuthFlags", 1)           # 1 = Anonymous only, no auth required
+    $iis.SetInfo()
+
+- name: Enable VRFY and EXPN commands (user enumeration)
+  ansible.windows.win_shell: |
+    $iis = New-Object System.DirectoryServices.DirectoryEntry("IIS://localhost/smtpsvc/1")
+    $iis.Put("HideServerInEnvelopeFrom", $false)
+    $iis.SetInfo()
+
+- name: Allow cleartext authentication (no TLS enforced)
+  ansible.windows.win_shell: |
+    $iis = New-Object System.DirectoryServices.DirectoryEntry("IIS://localhost/smtpsvc/1")
+    $iis.Put("LogonMethod", 0)         # Cleartext logon
+    $iis.SetInfo()
+
+# Add in case if AD has been locked down too hard during competition
+# - name: Create weak local mail users
+#   ansible.windows.win_user:
+#     name: "{{ item.username }}"
+#     password: "{{ item.password }}"
+#     password_never_expires: true
+#     account_disabled: false
+#     state: present
+#   loop: "{{ smtp_users }}"
+#   failed_when: false
+
+- name: Set mail drop directory permissions to Everyone
+  ansible.windows.win_acl:
+    path: "C:\\Inetpub\\mailroot\\Drop"
+    user: "Everyone"
+    rights: FullControl
+    type: allow
+    state: present
+
+- name: Disable Windows Defender
+  ansible.windows.win_shell: |
+    Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue
+
+- name: Start and set SMTP service to auto-start
+  ansible.windows.win_service:
+    name: SMTPSVC
+    state: started
+    start_mode: auto
+
+- name: Reboot if required after SMTPSVC configuration
+  ansible.windows.win_reboot:
+    reboot_timeout: 600

@@ -1,0 +1,37 @@
+---
+# ========================================================
+# Default variables for SMTP Server role
+# Override these in vars/smtp-config.yml
+# ========================================================
+
+smtp_server_hostname: "SCP-SMTP-01"
+smtp_server_ip: "10.10.10.23"
+
+# Active Directory connectivity
+ad_domain_name: "scp.com"
+ad_netbios_name: "SCP"
+dc_ip_address: "10.10.10.21"
+server_ou: "OU=Servers,DC=scp,DC=com"
+
+# Domain admin credentials used for domain join
+domain_join_user: "GREYTEAM"
+domain_join_password: "DONOTTOUCH!!!@123$"
+
+# SMTP virtual server settings
+smtp_port: 25
+smtp_relay_domain: "scp.com"
+smtp_max_message_size_kb: 10240
+smtp_max_session_size_kb: 102400
+smtp_max_recipients: 100
+
+# Drop directory for outbound mail (IIS SMTP default)
+smtp_drop_dir: "C:\\inetpub\\mailroot\\Drop"
+smtp_pickup_dir: "C:\\inetpub\\mailroot\\Pickup"
+smtp_queue_dir: "C:\\inetpub\\mailroot\\Queue"
+smtp_badmail_dir: "C:\\inetpub\\mailroot\\Badmail"
+
+# List of domains the SMTP server will accept mail for
+smtp_local_domains: ["scp.com"]
+
+# List of IP ranges allowed to relay through this server
+smtp_relay_allowed_ips: []

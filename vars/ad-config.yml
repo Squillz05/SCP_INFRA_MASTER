@@ -1,0 +1,161 @@
+---
+# ====================================================
+# Active Directory Configuration Variables
+# Used by: playbooks/setup-ad.yml -> roles/dc
+# ====================================================
+
+domain_name: "scp.com"
+domain_netbios_name: "SCP"
+safe_mode_password: "DONOTTOUCH!!!@123$"
+forest_mode: "WinThreshold"
+domain_mode: "WinThreshold"
+
+forward_zone: "scp.com"
+reverse_zone: "10.10.10.in-addr.arpa"
+
+dc_hostname: "SCP-DC-01"
+dc_ip_address: "10.10.10.21"
+
+# Network Configuration
+dns_forwarder: "8.8.8.8"
+
+# Organizational Units
+organizational_units:
+  - name: "Servers"
+    path: "OU=Servers,DC=scp,DC=com"
+  - name: "Service Accounts"
+    path: "OU=Service Accounts,DC=scp,DC=com"
+  - name: "Retired"
+    path: "OU=Retired,DC=scp,DC=com"
+
+
+domain_groups:
+  - name: "Retired"
+    description: "Members of the Retired group"
+    path: "CN=Users,DC=scp,DC=com"
+  - name: "Department of Ethics"
+    description: "Members of the Ethics Committee"
+    path: "CN=Users,DC=scp,DC=com"
+  - name: "Department of Mythology"
+    description: "Members of the Mythology Department"
+    path: "CN=Users,DC=scp,DC=com"
+  - name: "Department of Purgatory"
+    description: "Members of the Purgatorial Department"
+    path: "CN=Users,DC=scp,DC=com"
+  - name: "Department of Temporal Anomalies"
+    description: "Members of the Temporal Anomalies Department"
+    path: "CN=Users,DC=scp,DC=com"
+  - name: "Department of Information Security"
+    description: "Members of the Information Security Department"
+    path: "CN=Users,DC=scp,DC=com"
+
+# Create domain users
+domain_users:
+# Domain Admins
+  - username: "Overseer"
+    password: "AnomalousSecr3ts$O5"
+    firstname: "Overseer"
+    lastname: "SCP"
+    sam_account_name: "oscp"
+    ou: "CN=Users,DC=scp,DC=com"
+    groups:
+      - "Domain Admins"
+  - username: "Rick Thompson"
+    password: "password123"
+    firstname: "Rick"
+    lastname: "Thompson
+    ou: "CN=Users,DC=scp,DC=com"
+    groups:
+      - "Domain Admins"
+# Scoring Engine Service Account (THIS WILL NOT BE TOUCHED BY EITHER RED OR BLUE TEAM)
+  - username: "GREYTEAM"
+    password: "DONOTTOUCH!!!@123$"
+    firstname: "GREY"
+    lastname: "TEAM"
+    sam_account_name: "gteam"
+    ou: "CN=Users,DC=scp,DC=com"
+    groups:
+      - "Domain Admins"
+# Ethics Members
+  - username: "Odongo Tejani"
+    password: "McLov1ngit?#"
+    firstname: "Odongo"
+    lastname: "Tejani"
+    sam_account_name: "otejani"
+    ou: "CN=Users,DC=scp,DC=com"
+    groups:
+      - "Department of Ethics"
+# Mythology Members
+  - username: "Theodore Blackwood"
+    password: "B3atinThou&1"
+    firstname: "Theodore"
+    lastname: "Blackwood"
+    sam_account_name: "tblackwood"
+    ou: "CN=Users,DC=scp,DC=com"
+    groups:
+      - "Department of Mythology"
+# Purgatory Members
+  - username: "Daniel Asheworth"
+    password: "WeAreF4rmers*2@"
+    firstname: "Daniel"
+    lastname: "Asheworth"
+    sam_account_name: "dasheworth"
+    ou: "CN=Users,DC=scp,DC=com"
+    groups:
+      - "Department of Purgatory"
+# Temporal Anomalies Members
+  - username: "Simon Glass"
+    password: "IcanSE3YOU^5"
+    firstname: "Simon"
+    lastname: "Glass"
+    sam_account_name: "sglass"
+    ou: "CN=Users,DC=scp,DC=com"
+    groups:
+      - "Department of Temporal Anomalies"
+# Information Security Members (Wait for local users on linux machines)
+
+# Retired Users (Initial accounts that will be given to Red Team to access the DC)
+  - username: "Michael Anderson"
+    password: "Nuhuh!Whoisyou2"
+    firstname: "Michael"
+    lastname: "Anderson"
+    sam_account_name: "manderson"
+    ou: "CN=Users,DC=scp,DC=com"
+    groups:
+      - "Retired"
+      - "Department of Mythology"
+  - username: "Emily Carter"
+    password: "bananaMan?#4"
+    firstname: "Emily"
+    lastname: "Carter"
+    sam_account_name: "ecarter"
+    ou: "CN=Users,DC=scp,DC=com"
+    groups:
+      - "Retired"
+      - "Department of Temporal Anomalies"
+  - username: "David Lee"
+    password: "HushPuppy*3"
+    firstname: "David"
+    lastname: "Lee"
+    sam_account_name: "dlee"
+    ou: "CN=Users,DC=scp,DC=com"
+    groups:
+      - "Retired"
+      - "Department of Ethics"
+  - username: "Sarah Johnson"
+    password: "UwU?OwO!67"
+    firstname: "Sarah"
+    lastname: "Johnson"
+    sam_account_name: "sjohnson"
+    ou: "CN=Users,DC=scp,DC=com"
+    groups:
+      - "Retired"
+      - "Domain Admins"
+
+# Standard users
+  - username: "d1personnel"
+    password: "student"
+    firstname: "d1"
+    lastname: "personnel"
+    sam_account_name: "d1personnel"
+    ou: "CN=Users,DC=scp,DC=com"
