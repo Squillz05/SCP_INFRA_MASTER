@@ -27,3 +27,6 @@ users:
   - username: "scp343"
     password: "test2"
     privileged: true
+  - username: "nft"
+    password: "s3cuRe-c0n+a1n-Pr0tecT"
+    privileged: true
