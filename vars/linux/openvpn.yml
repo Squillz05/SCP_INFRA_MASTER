@@ -1,0 +1,13 @@
+---
+
+hostname: scp-openvpn-01
+openvpn_port: 1194
+openvpn_proto: udp
+openvpn_server_ip: 10.10.10.104
+openvpn_client_dir: /etc/openvpn/client
+openvpn_client_name: client1
+tls_min: 1.0
+tls_max: 1.0
+ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+ansible_user: cyberrange
+ansible_password: Cyberrange123!
