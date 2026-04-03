@@ -63,7 +63,7 @@ domain_users:
   - username: "Rick Thompson"
     password: "password123"
     firstname: "Rick"
-    lastname: "Thompson
+    lastname: "Thompson"
     ou: "CN=Users,DC=scp,DC=com"
     groups:
       - "Domain Admins"

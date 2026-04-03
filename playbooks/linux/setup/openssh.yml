@@ -1,0 +1,11 @@
+---
+
+- name: Setup OpenSSH Server
+  hosts: openssh_servers
+  gather_facts: true
+  vars_files:
+    - ../../../vars/linux/common.yml
+    - ../../../vars/linux/openssh.yml
+  roles:
+    - linux/common
+    - linux/openssh
