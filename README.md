@@ -4,9 +4,9 @@
 This repository contains the complete infrastructure automation for the SCP Echo environment, managed by Grey Team. All Windows, Linux, scoring engine, vulnerability deployment, and reset operations are handled through Ansible using a unified, organized structure. This repo replaces the previous split Linux/Windows repos and consolidates everything into one clean, maintainable codebase.
 
 ---
-
 ## 📂 Repository Structure
 
+```
 scpinfra/
 │
 ├── inventory/
@@ -47,7 +47,7 @@ scpinfra/
 │   ├── vuln-all.yml
 │   └── reset-all.yml
 │
-├── roles/
+├── roles/ ( to change )
 │   ├── ad/
 │   ├── smb/
 │   ├── smtp/
@@ -61,7 +61,7 @@ scpinfra/
 │   ├── smtp-vuln/
 │   └── mysql-vuln/
 │
-├── vars/
+├── vars/  (to Change )
 │   ├── ad-config.yml
 │   ├── smb-config.yml
 │   ├── smtp-config.yml
@@ -78,6 +78,8 @@ scpinfra/
 │
 ├── ansible.cfg
 └── README.md
+```
+
 
 ---
 
@@ -162,7 +164,3 @@ ansible-playbook playbooks/reset/reset-windows-full.yml
 - WinRM enabled on Windows hosts
 - SSH + ProxyJump access to Linux hosts
 - Proper credentials in hosts.ini
-
----
-
-Infrastructure Lead: William W
