@@ -4,7 +4,10 @@
 # Used By: playbooks/linux.yml -> roles/linux/common
 # ====================================================
 
-common_packages:
+apt_packages:
+  - "git"
+
+dnf_packages:
   - "@Server"
   - "git"
 
