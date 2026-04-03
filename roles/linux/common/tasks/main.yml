@@ -19,7 +19,7 @@
 
 - name: Set /etc/hosts
   ansible.builtin.template:
-    src: ../../templates/linux/hosts.j2
+    src: ./templates/hosts.j2
     dest: /etc/hosts
   become: true
 
