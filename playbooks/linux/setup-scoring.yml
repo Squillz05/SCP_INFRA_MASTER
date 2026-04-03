@@ -1,0 +1,70 @@
+---
+# =============================================
+# Playbook Name: setup-scoring.yml
+# Description:  Deploys the SCP Foundation Scoring Engine
+#               to the Ubuntu 22.04 scoring host VM.
+# Author: Koy Monette
+# Date Created: 04/01/2026
+#
+# Prerequisites:
+#   - scoring_host VM must be running Ubuntu 22.04
+#   - scoring_host must be reachable via SSH through jump host
+#   - All competition VMs (AD, Apache, SMTP, MySQL, SMB, SSH, VPN)
+#     must be deployed and running before running this playbook
+#   - vars/scoring-config.yml must be filled in with correct IPs
+#     and credentials before running
+#
+# Usage:
+#   ansible-playbook playbooks/setup-scoring.yml
+#
+# To redeploy after config changes:
+#   ansible-playbook playbooks/setup-scoring.yml --tags config
+#
+# To reset scoreboard after deployment:
+#   curl -X POST http://<scoring-host-ip>:5000/api/admin/reset
+# =============================================
+
+- name: Deploy SCP Foundation Scoring Engine
+  hosts: scoring_host
+  gather_facts: true
+  become: true
+  vars_files:
+    - ../vars/scoring-config.yml
+
+  pre_tasks:
+    - name: Verify Ubuntu 22.04
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "Ubuntu"
+          - ansible_distribution_version is version("22.04", ">=")
+        fail_msg: "Scoring host must be Ubuntu 22.04 or later."
+        success_msg: "OS check passed: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+    - name: Display deployment info
+      ansible.builtin.debug:
+        msg:
+          - "Deploying scoring engine to {{ inventory_hostname }} ({{ ansible_host }})"
+          - "Install directory: {{ scoring_install_dir }}"
+          - "Dashboard will be available at http://{{ ansible_host }}:{{ dashboard_port }}"
+
+  roles:
+    - scoring-engine
+
+  post_tasks:
+    - name: Verify scp-scorer is running
+      ansible.builtin.systemd:
+        name: scp-scorer
+      register: scorer_status
+
+    - name: Verify scp-dashboard is running
+      ansible.builtin.systemd:
+        name: scp-dashboard
+      register: dashboard_status
+
+    - name: Confirm services are active
+      ansible.builtin.assert:
+        that:
+          - scorer_status.status.ActiveState == "active"
+          - dashboard_status.status.ActiveState == "active"
+        fail_msg: "One or more scoring services failed to start. Check journalctl -u scp-scorer"
+        success_msg: "Both scoring services are running."

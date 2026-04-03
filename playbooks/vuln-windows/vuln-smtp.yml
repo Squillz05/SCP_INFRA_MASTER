@@ -1,0 +1,41 @@
+---
+# =========================================================
+# Playbook Name: vuln-smtp.yml
+# Description: Configures vulnerabilities on the SMTP server
+# Author: Andrew Xie
+# Date Created: 03/30/2026
+# =========================================================
+
+- name: Configure Vulnerable SMTP Server
+  hosts: smtp_servers
+  gather_facts: yes
+  vars_files:
+    - ../vars/smtp-config.yml
+    - ../vars/vuln-smtp-config.yml
+
+  tasks:
+    - name: Display warning
+      debug:
+        msg: 
+          - "WARNING: This playbook creates security vulnerabilities"
+          - "Only run in isolated lab environments"
+          - "Press Ctrl+C to abort"
+    
+    - name: Pause for confirmation
+      pause:
+        seconds: 10
+
+  roles:
+    - smtp-vuln
+
+  post_tasks:
+    - name: Display vulnerabilities created
+      debug:
+        msg:
+          - "Vulnerabilities configured:"
+          - "1. Open SMTP relay (Initial Access / Pivoting vector)"
+          - "2. Weak/default credentials (Already Configured in AD)"
+          - "3. No authentication required for relay"
+          - "4. Email enumeration via VRFY/EXPN commands enabled"
+          - "5. Cleartext AUTH allowed (no TLS enforced)"
+          - "6. No rate limiting (spam/phishing platform)"

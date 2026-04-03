@@ -1,0 +1,39 @@
+---
+# =========================================================
+# Playbook Name: vuln-smb.yml
+# Description: Configures vulnerabilities on the SMB server
+# Author: Andrew Xie
+# Date Created: 03/30/2026
+# =========================================================
+
+- name: Configure Vulnerable SMB Server
+  hosts: smb_servers
+  gather_facts: yes
+  vars_files:
+    - ../vars/smb-config.yml
+    - ../vars/vuln-smb-config.yml
+
+  tasks:
+    - name: Display warning
+      debug:
+        msg: 
+          - "WARNING: This playbook creates security vulnerabilities"
+          - "Only run in isolated lab environments"
+          - "Press Ctrl+C to abort"
+    
+    - name: Pause for confirmation
+      pause:
+        seconds: 10
+
+  roles:
+    - smb-vuln
+
+  post_tasks:
+    - name: Display vulnerabilities created
+      debug:
+        msg:
+          - "Vulnerabilities configured:"
+          - "1. Unauthenticated share enumeration"
+          - "2. Weak local admin credentials"
+          - "3. Overly permissive share ACLs"
+          - "4. Sensitive files left on shares"

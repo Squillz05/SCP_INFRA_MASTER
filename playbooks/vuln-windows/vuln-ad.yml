@@ -1,0 +1,39 @@
+---
+# =========================================================
+# Playbook Name: vuln-ad.yml
+# Description: Configures vulnerabilities on the DC
+# Author: Andrew Xie
+# Date Created: 03/26/2026
+# =========================================================
+
+- name: Configure Vulnerable Active Directory
+  hosts: domain_controllers
+  gather_facts: yes
+  vars_files:
+    - ../vars/ad-config.yml
+    - ../vars/vuln-ad-config.yml
+
+  tasks:
+    - name: Display warning
+      debug:
+        msg: 
+          - "WARNING: This playbook creates security vulnerabilities"
+          - "Only run in isolated lab environments"
+          - "Press Ctrl+C to abort"
+    
+    - name: Pause for confirmation
+      pause:
+        seconds: 10
+
+  roles:
+    - dc-vuln
+
+  post_tasks:
+    - name: Display vulnerabilities created
+      debug:
+        msg:
+          - "Vulnerabilities configured:"
+          - "1. SMB signing disabled"
+          - "2. LDAP signing disabled"
+          - "3. LLMNR enabled"
+          - "4. Weak service account passwords created"

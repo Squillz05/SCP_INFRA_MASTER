@@ -1,0 +1,56 @@
+---
+# =================================================
+# Playbook Name: setup-smb.yml
+# Description: Sets up a Samba SMB Server
+# Author: Andrew Xie
+# Date Created: 03/06/2026
+#
+# Join the Samba SMB Server to the Active Directory Domain
+# Prerequisites:
+# - Active Directory Domain Controller must be set up and running
+# - Ensure the Samba SMB Server can communicate with the Domain Controller
+# =================================================
+
+- name: Setup SMB File Server
+  hosts: smb_servers
+  gather_facts: yes
+  vars_files:
+    - ../vars/ad-config.yml
+    - ../vars/smb-config.yml
+
+  pre_tasks:
+    - name: Set timezone to UTC
+      community.windows.win_timezone:
+        timezone: "UTC"
+
+    - name: Set computer hostname
+      ansible.windows.win_hostname:
+        name: "{{ smb_server_hostname }}"
+      register: hostname_change
+
+    - name: Reboot if hostname changed
+      ansible.windows.win_reboot:
+        reboot_timeout: 600
+      when: hostname_change.reboot_required
+
+  roles:
+    - smb
+
+  post_tasks:
+    - name: List configured shares
+      ansible.windows.win_shell: |
+        Get-SmbShare | Select-Object Name, Path, Description | Format-Table -AutoSize
+      register: share_list
+      changed_when: false
+
+    - name: Display configured shares
+      ansible.builtin.debug:
+        msg: "{{ share_list.stdout_lines }}"
+
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg:
+          - "SMB server setup complete."
+          - "Server: {{ smb_server_hostname }} ({{ smb_server_ip }})"
+          - "Domain: {{ ad_domain_name }}"
+          - "Shares created: {{ smb_shares | map(attribute='name') | list | join(', ') }}"

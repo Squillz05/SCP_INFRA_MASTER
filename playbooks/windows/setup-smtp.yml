@@ -1,0 +1,61 @@
+---
+# =============================================
+# Playbook Name: setup-smtp.yml
+# Description:  Configures the SMTP mail server (SCP-SMTP01)
+#               using the Windows IIS 6 SMTP feature, joins
+#               it to lab.local, and configures virtual domains
+#               and relay restrictions.
+# Author: Andrew Xie
+# Date Created: 03/26/2026
+#
+# Prerequisites:
+#   - setup-ad.yml must have been run successfully
+#   - DC (10.10.10.21) must be reachable from the SMTP host
+# =============================================
+
+- name: Setup SMTP Mail Server
+  hosts: smtp_servers
+  gather_facts: yes
+  vars_files:
+    - ../vars/ad-config.yml
+    - ../vars/smtp-config.yml
+
+  pre_tasks:
+    - name: Set timezone to UTC
+      community.windows.win_timezone:
+        timezone: "UTC"
+
+    - name: Set computer hostname
+      ansible.windows.win_hostname:
+        name: "{{ smtp_server_hostname }}"
+      register: hostname_change
+
+    - name: Reboot if hostname changed
+      ansible.windows.win_reboot:
+        reboot_timeout: 600
+      when: hostname_change.reboot_required
+
+  roles:
+    - smtp
+
+  post_tasks:
+    - name: Verify SMTPSVC service status
+      ansible.windows.win_service_info:
+        name: SMTPSVC
+      register: smtp_svc_info
+
+    - name: Display SMTP service status
+      ansible.builtin.debug:
+        msg: "SMTPSVC service state: {{ smtp_svc_info.services[0].state }}"
+
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg:
+          - "SMTP server setup complete."
+          - "Server    : {{ smtp_server_hostname }} ({{ smtp_server_ip }})"
+          - "Domain    : {{ ad_domain_name }}"
+          - "SMTP Port : {{ smtp_port }}"
+          - "Local domains : {{ smtp_local_domains | join(', ') }}"
+          - "Relay allowed : {{ smtp_relay_allowed_ips | join(', ') }}"
+          - "Pickup dir    : {{ smtp_pickup_dir }}"
+          - "Drop dir      : {{ smtp_drop_dir }}"
