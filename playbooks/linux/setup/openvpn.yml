@@ -1,8 +1,7 @@
-- hosts: openvpn
+- hosts: openvpn_servers
   become: true
   vars_files:
     - ../../vars/linux/common.yml
     - ../../vars/linux/openvpn.yml
   roles:
-    - linux/Easy-RSA
     - linux/openvpn
