@@ -61,8 +61,8 @@ smtp_ehlo_domain: "scorer.scp.com"
 # Scorer DB user — must be created on the MySQL VM:
 #   CREATE USER 'scorer'@'%' IDENTIFIED BY '<password>';
 #   GRANT ALL ON foundation_db.* TO 'scorer'@'%';
-mysql_user: "scorer"
-mysql_pass: ""             # fill in before running
+mysql_user: "SCORER_GREYTEAM"
+mysql_pass: "Th3ScoreUser@9034!"             # fill in before running
 mysql_db: "foundation_db"
 
 # ── SMB ───────────────────────────────────────────────────────

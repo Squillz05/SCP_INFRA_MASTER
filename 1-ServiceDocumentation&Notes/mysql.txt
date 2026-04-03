@@ -1,5 +1,5 @@
 ========================================
-Service Name: mysql
+Service Name: mysql       contact: William 
 ========================================
 
 Purpose:
@@ -7,7 +7,11 @@ Purpose:
 
 
 Default Users / Credentials:
+- root (local administrative user) / NoR00tF0rY0u!!!78
+- SQL_APACHE_GREYTEAM (application user for Apache) / SQ1APACH3User#0544!
+- SCORER_GREYTEAM (used by scoring engine; must have SELECT access) / Th3ScoreUser@9034!
 
+- more info on passwds invars/mysql-config.yml and scoring-config.yml 
 
 
 Flags: 
@@ -35,3 +39,21 @@ Reset Notes:
 
 Troubleshooting:
 
+
+
+Apache Connection Notes: 
+
+Apache connects to MySQL using a dedicated Grey Team service account:
+
+- **Host:** 10.10.10.102  
+- **Database:** foundation_db  
+- **User:** SQL_APACHE_GREYTEAM  
+- **Password:** SQ1APACH3User#0544!  
+- **Port:** 3306  
+
+Apache only needs these four values in its config or PHP application:
+
+1. **DB Host** → 10.10.10.102  
+2. **DB Name** → foundation_db  
+3. **DB User** → SQL_APACHE_GREYTEAM  
+4. **DB Password** → SQ1APACH3User#0544! 
