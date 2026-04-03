@@ -8,74 +8,57 @@ This repository contains the complete infrastructure automation for the SCP Echo
 
 ```
 scpinfra/
-│
-├── inventory/
-│   └── hosts.ini
-│
-├── playbooks/
-│   ├── linux/
-│   │   ├── setup-openssh.yml
-│   │   ├── setup-openvpn.yml
-│   │   ├── setup-apache.yml
-│   │   ├── setup-mysql.yml
-│   │   ├── setup-scoring.yml
-│   │   └── linux-full.yml
-│   │
-│   ├── windows/
-│   │   ├── setup-ad.yml
-│   │   ├── setup-smb.yml
-│   │   ├── setup-smtp.yml
-│   │   └── windows-full.yml
-│   │
-│   ├── vuln/
-│   │   ├── vuln-ad.yml
-│   │   ├── vuln-smb.yml
-│   │   ├── vuln-smtp.yml
-│   │   ├── vuln-mysql.yml
-│   │   ├── vuln-linux-full.yml
-│   │   └── vuln-windows-full.yml
-│   │
-│   ├── reset/
-│   │   ├── reset-ad.yml
-│   │   ├── reset-smb.yml
-│   │   ├── reset-smtp.yml
-│   │   ├── reset-mysql.yml
-│   │   ├── reset-linux-full.yml
-│   │   └── reset-windows-full.yml
-│   │
-│   ├── deploy-all.yml
-│   ├── vuln-all.yml
-│   └── reset-all.yml
-│
-├── roles/ ( to change )
-│   ├── ad/
-│   ├── smb/
-│   ├── smtp/
-│   ├── apache/
-│   ├── mysql/
-│   ├── openssh/
-│   ├── openvpn/
-│   ├── scoring-engine/
-│   ├── dc-vuln/
-│   ├── smb-vuln/
-│   ├── smtp-vuln/
-│   └── mysql-vuln/
-│
-├── vars/  (to Change )
-│   ├── ad-config.yml
-│   ├── smb-config.yml
-│   ├── smtp-config.yml
-│   ├── apache-config.yml
-│   ├── mysql-config.yml
-│   ├── scoring-config.yml
-│   ├── vuln-ad-config.yml
-│   ├── vuln-smb-config.yml
-│   ├── vuln-smtp-config.yml
-│   └── vuln-mysql-config.yml
-│
-├── templates/
-│   └── shared templates
-│
+.
+├── 1-ServiceDocumentation&Notes
+│   └── ...
+├── inventory
+│   └── hosts.ini
+├── playbooks
+│   ├── linux
+│   │   ├── reset
+│   │   │   └── ...
+│   │   ├── setup
+│   │   │   └── ...
+│   │   ├── vulns
+│   │   │   └── ...
+│   │   ├── reset.yml
+│   │   ├── setup.yml
+│   │   └── vulns.yml
+│   ├── unscored
+│   │   ├── reset
+│   │   │   └── ...
+│   │   ├── setup
+│   │   │   └── ...
+│   │   ├── reset.yml
+│   │   └── setup.yml
+│   ├── windows
+│   │   ├── reset
+│   │   │   └── ...
+│   │   ├── setup
+│   │   │   └── ...
+│   │   ├── vulns
+│   │   │   └── ...
+│   │   ├── reset.yml
+│   │   ├── setup.yml
+│   │   └── vulns.yml
+├── roles
+│   ├── linux
+│   │   └── ...
+│   ├── unscored
+│   │   └── ...
+│   └── windows
+│       └── ...
+├── vars
+│   ├── linux
+│   │   ├── vulns
+│   │   │   └── ...
+│   │   └── ...
+│   ├── unscored
+│   │   └── ...
+│   └── windows
+│       ├── vulns
+│       │   └── ...
+│       └── ...
 ├── ansible.cfg
 └── README.md
 ```
