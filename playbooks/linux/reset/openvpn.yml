@@ -4,5 +4,4 @@
     - ../../vars/linux/common.yml
     - ../../vars/linux/openvpn.yml
   roles:
-    - linux/Easy-RSA
     - linux/openvpn
