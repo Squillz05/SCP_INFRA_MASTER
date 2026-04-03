@@ -1,0 +1,37 @@
+========================================
+Service Name: openssh
+========================================
+
+Purpose:
+
+
+
+Default Users / Credentials:
+
+
+
+Flags: 
+1.
+2.
+3.
+
+
+
+Ports / Protocols:
+
+
+
+Deployment Notes:
+
+
+
+Vulnerability Notes:
+
+
+
+Reset Notes:
+
+
+
+Troubleshooting:
+
