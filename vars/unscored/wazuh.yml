@@ -2,11 +2,14 @@
 # ========================================================
 # Wazuh Competition Configuration
 # Used by: wazuh-manager, linux/wazuh-agent, windows/wazuh-agent
+#
+# Shared values are defined once at the top, then mapped to
+# role-prefixed variables below (required by ansible-lint).
 # ========================================================
 
 # Wazuh version to deploy
 wazuh_version: "4.9"
-wazuh_windows_msi_version: "4.9.0-1"
+wazuh_msi_version: "4.9.0-1"
 
 # ----------------------------------------------------------
 # Manager network config
@@ -26,8 +29,33 @@ wazuh_enrollment_use_password: "no"
 wazuh_email_notification: "no"
 wazuh_alert_log_level: 3
 
+# ==========================================================
+# Role-prefixed overrides (unscored_ / linux_ / windows_)
+# ==========================================================
+
 # ----------------------------------------------------------
-# Linux agent overrides (linux_ prefix required by role)
+# unscored/wazuh-manager
+# ----------------------------------------------------------
+unscored_wazuh_version: "{{ wazuh_version }}"
+unscored_wazuh_manager_ip: "{{ wazuh_manager_ip }}"
+unscored_wazuh_manager_port: "{{ wazuh_manager_port }}"
+unscored_wazuh_manager_protocol: "{{ wazuh_manager_protocol }}"
+unscored_wazuh_enrollment_port: "{{ wazuh_enrollment_port }}"
+unscored_wazuh_enrollment_use_password: "{{ wazuh_enrollment_use_password }}"
+unscored_wazuh_dashboard_port: "{{ wazuh_dashboard_port }}"
+unscored_wazuh_email_notification: "{{ wazuh_email_notification }}"
+unscored_wazuh_alert_log_level: "{{ wazuh_alert_log_level }}"
+
+unscored_wazuh_fim_dirs:
+  - /etc
+  - /usr/bin
+  - /usr/sbin
+  - /opt/scp-scoring
+
+unscored_wazuh_fim_frequency: 300
+
+# ----------------------------------------------------------
+# linux/wazuh-agent
 # ----------------------------------------------------------
 linux_wazuh_version: "{{ wazuh_version }}"
 linux_wazuh_manager_ip: "{{ wazuh_manager_ip }}"
@@ -46,12 +74,10 @@ linux_wazuh_agent_fim_dirs:
 linux_wazuh_agent_fim_frequency: 300
 
 # ----------------------------------------------------------
-# File Integrity Monitoring — Manager (scp-wazuh-01)
+# windows/wazuh-agent
 # ----------------------------------------------------------
-wazuh_fim_dirs:
-  - /etc
-  - /usr/bin
-  - /usr/sbin
-  - /opt/scp-scoring
-
-wazuh_fim_frequency: 300
+windows_wazuh_version: "{{ wazuh_version }}"
+windows_wazuh_msi_version: "{{ wazuh_msi_version }}"
+windows_wazuh_manager_ip: "{{ wazuh_manager_ip }}"
+windows_wazuh_manager_port: "{{ wazuh_manager_port }}"
+windows_wazuh_enrollment_port: "{{ wazuh_enrollment_port }}"

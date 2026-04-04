@@ -2,7 +2,7 @@
     Wazuh Agent Configuration — Windows
     Managed by Ansible — do not edit manually.
     Role: windows/wazuh-agent
-    Manager: {{ wazuh_manager_ip }}
+    Manager: {{ windows_wazuh_manager_ip }}
 -->
 <ossec_config>
 
@@ -11,8 +11,8 @@
   ===================================================== -->
   <client>
     <server>
-      <address>{{ wazuh_manager_ip }}</address>
-      <port>{{ wazuh_manager_port }}</port>
+      <address>{{ windows_wazuh_manager_ip }}</address>
+      <port>{{ windows_wazuh_manager_port }}</port>
       <protocol>tcp</protocol>
     </server>
     <notify_time>10</notify_time>
@@ -23,9 +23,9 @@
     <!-- Auto-enrollment -->
     <enrollment>
       <enabled>yes</enabled>
-      <manager_address>{{ wazuh_manager_ip }}</manager_address>
-      <port>{{ wazuh_enrollment_port }}</port>
-      <agent_name>{{ wazuh_agent_name }}</agent_name>
+      <manager_address>{{ windows_wazuh_manager_ip }}</manager_address>
+      <port>{{ windows_wazuh_enrollment_port }}</port>
+      <agent_name>{{ windows_wazuh_agent_name }}</agent_name>
       <auto_method>yes</auto_method>
       <delay_after_enrollment>20</delay_after_enrollment>
     </enrollment>

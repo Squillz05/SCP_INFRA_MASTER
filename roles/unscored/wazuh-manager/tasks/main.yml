@@ -182,7 +182,7 @@
       - "Dashboard : https://{{ unscored_wazuh_manager_ip }}:{{ unscored_wazuh_dashboard_port }}"
       - "API       : https://{{ unscored_wazuh_manager_ip }}:55000"
       - "Manager   : {{ unscored_wazuh_manager_ip }}:{{ unscored_wazuh_manager_port }} (agents)"
-      - "Enrollment: {{ unscored_wazuh_manager_ip }}:{{ wazuh_enrollment_port }} (auto-enroll)"
+      - "Enrollment: {{ unscored_wazuh_manager_ip }}:{{ unscored_wazuh_enrollment_port }} (auto-enroll)"
       - "------------------------------------------------------------"
       - "Agent config — point agents at: {{ unscored_wazuh_manager_ip }}"
       - "See credentials in: /root/wazuh-install-files.tar"
