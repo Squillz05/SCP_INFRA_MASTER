@@ -2,36 +2,45 @@
 Service Name: openvpn
 ========================================
 
-Purpose:
+Purpose: Supply VPN to users.
 
 
 
-Default Users / Credentials:
+Default Users / Credentials: cyberrange:Cyberrange123!
 
 
 
 Flags: 
-1.
-2.
-3.
+1. CONFIDENTIAL{VPN_7L4G_!Sn’7_h3r3}
+2. CONFIDENTIAL{7h!z_!z_n07_7h3_7l4G_y0u^r3_l00k!ng_4}
 
 
 
-Ports / Protocols:
+Ports / Protocols: Port 1194/udp
 
 
 
-Deployment Notes:
+Deployment Notes: Add cyberrange user to rocky on deployment; install ansible-core, epel-release, sshpass before running ansible. 
+#cloud-config
+users:
+  - name: cyberrange
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    plain_text_passwd: 'Cyberrange123!'
+    lock_passwd: false
 
 
 
-Vulnerability Notes:
+Vulnerability Notes: This system currently has no firewalls, and the POODLE and MiTM vulnerability within OpenVPN.
+Root ssh login with no password.
+bin ssh login with no password.
 
 
 
-Reset Notes:
+Reset Notes: To reset: deploy a new machine with the deployment notes and then run ansible.
 
 
 
-Troubleshooting:
+Troubleshooting: Ensure certificates are correct on both the server and client. Make sure the firewall port is open and that the client has a client.ovpn file on their machine. Restart all services. 
 

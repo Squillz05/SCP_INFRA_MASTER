@@ -1,0 +1,64 @@
+---
+# ============================================================
+# MySQL Server Variables (Debian 13)
+# System: SCP-DATABASE-01 (10.10.10.102)
+# Purpose: Backend database for Apache web application
+# Author: William Walker (Grey Team)
+# ============================================================
+
+# Hostname
+hostname: "scp-database-01"
+
+# MySQL Service Settings
+mysql_service_name: mysql
+mysql_port: 3306
+mysql_bind_address: "0.0.0.0"
+mysql_data_dir: /var/lib/mysql
+
+# Database Info
+mysql_database: "foundation_db"
+
+# Grey Team Local Admin (Root-Equivalent)
+mysql_grey_admin_user: "GREY_ADMIN"
+mysql_grey_admin_pass: "Gr3yTeamDB!Admin#2026"
+
+# Apache → MySQL Service Account (Grey Team)
+mysql_app_user: "SQL_APACHE_GREYTEAM"
+mysql_app_pass: "SQ1APACH3User#0544!"
+
+# Scoring Engine → MySQL Service Account (Grey Team)
+mysql_scorer_user: "SCORER_GREYTEAM"
+mysql_scorer_pass: "Th3ScoreUser@9034!"
+
+# Blue Team → MySQL Admin-Level Account
+mysql_blue_user: "DR_ADMIN"
+mysql_blue_pass: "Blu3TeamDB!20265"
+
+# Debian 13 Packages
+mysql_packages:
+  - mariadb-server
+  - mariadb-client
+  - python3-pymysql
+
+# Firewall Settings
+mysql_firewall_port: 3306
+mysql_firewall_zone: public
+
+# OS Users (from Grey Team Packet)
+linux_users:
+  - username: "cyberrange"
+    password: "Cyberrange123!"
+    privileged: true
+
+  - username: "GREYTEAM"
+    password: "DONOTTOUCH!!!@123$"
+    privileged: true
+
+  - username: "ntf"
+    password: "s3cuRe-c0n+a1n-Pr0tecT"
+    privileged: false
+
+# Ansible Connection Overrides
+ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+ansible_user: cyberrange
+ansible_password: Cyberrange123!

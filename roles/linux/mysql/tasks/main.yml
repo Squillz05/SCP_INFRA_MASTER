@@ -1,1 +1,100 @@
 ---
+# ============================================================
+# MySQL Server Role (Debian 13 - MariaDB)
+# Deploys a clean, functional database service
+# Author: William Walker (Grey Team)
+# ============================================================
+
+# Install Required Packages
+- name: Install MySQL (MariaDB) packages
+  ansible.builtin.apt:
+    name: "{{ mysql_packages }}"
+    state: present
+    update_cache: true
+  become: true
+
+# Ensure MySQL Service is Enabled + Running
+- name: Enable and start MySQL service
+  ansible.builtin.systemd:
+    name: "{{ mysql_service_name }}"
+    state: started
+    enabled: true
+  become: true
+
+# Deploy MySQL Server Configuration (Template)
+- name: Deploy MySQL server configuration
+  ansible.builtin.template:
+    src: 50-server.cnf.j2
+    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart MySQL
+  become: true
+
+# Set Root Password (MariaDB Secure Install Equivalent)
+- name: Set MySQL root password
+  community.mysql.mysql_user:
+    name: "{{ mysql_root_user }}"
+    host: "localhost"
+    password: "{{ mysql_root_pass }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+    check_implicit_admin: true
+    state: present
+  become: true
+
+# Create Application Database
+- name: Create foundation_db database
+  community.mysql.mysql_db:
+    name: "{{ mysql_database }}"
+    state: present
+    login_user: "{{ mysql_root_user }}"
+    login_password: "{{ mysql_root_pass }}"
+  become: true
+
+# Create Apache → MySQL Service Account
+- name: Create Apache MySQL user
+  community.mysql.mysql_user:
+    name: "{{ mysql_app_user }}"
+    password: "{{ mysql_app_pass }}"
+    priv: "{{ mysql_database }}.*:ALL"
+    host: "%"
+    state: present
+    login_user: "{{ mysql_root_user }}"
+    login_password: "{{ mysql_root_pass }}"
+  become: true
+
+
+# Create Scoring Engine → MySQL Service Account
+- name: Create scoring engine MySQL user
+  community.mysql.mysql_user:
+    name: "{{ mysql_scorer_user }}"
+    password: "{{ mysql_scorer_pass }}"
+    priv: "{{ mysql_database }}.*:SELECT"
+    host: "%"
+    state: present
+    login_user: "{{ mysql_root_user }}"
+    login_password: "{{ mysql_root_pass }}"
+  become: true
+
+
+# Open Firewall Port for MySQL (LAN Only)
+- name: Allow MySQL port through firewall
+  ansible.builtin.ufw:
+    rule: allow
+    port: "{{ mysql_firewall_port }}"
+    proto: tcp
+  become: true
+
+
+# Verify MySQL is Running
+- name: Verify MySQL service status
+  ansible.builtin.systemd:
+    name: "{{ mysql_service_name }}"
+    state: started
+  register: mysql_status
+  become: true
+
+- name: Debug MySQL status
+  ansible.builtin.debug:
+    msg: "MySQL is running: {{ mysql_status.status.ActiveState }}"
