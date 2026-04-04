@@ -38,4 +38,14 @@
     mode: "0777"
     recurse: true
   become: true
+
+- name: Restore SSH Private Key Permissions
+  ansible.builtin.file:
+    path: "/etc/ssh/{{ item }}"
+    mode: "0600"
+  become: true
+  loop:
+    - ssh_host_ecdsa_key
+    - ssh_host_ed25519_key
+    - ssh_host_rsa_key
   notify: Restart sshd
