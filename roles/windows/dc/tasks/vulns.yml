@@ -45,3 +45,27 @@
 - name: Disable Windows Defender
   ansible.windows.win_shell: |
     Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue
+
+- name: Create GPO Flag
+  ansible.windows.win_shell: |
+    Import-Module GroupPolicy
+    if (-not (Get-GPO -Name "Domain Wallpaper Policy" -ErrorAction SilentlyContinue)) {
+      New-GPO -Name "Domain Wallpaper Policy" -Comment "CONFIDENTIAL{Wh0mS!_D4r3_v13W_tH1$}" 
+      New-GPLink -Name "Domain Wallpaper Policy" -Target "DC=scp,DC=com"
+    }
+
+- name : Create regulars docs
+  ansible.windows.win_copy:
+    content: "{{ item.content }}"
+    dest: "{{ item.dest }}"
+  loop: "{{ regular_docs }}"
+
+- name: Create Flag File (Easy Location)
+  ansible.windows.win_copy:
+    content: "CONFIDENTIAL{B4nAn4$_1s_4l$0_a_$3cur3_fru1t}"
+    dest: "C:\\Users\\Public\\Documents\\SCP013.txt"
+
+- name: Create Flag File (Admin Location)
+  ansible.windows.win_copy:
+    content: "CONFIDENTIAL{SCP_096_1s_4l$0_a_vu1n3r4bl3_m4n}"
+    dest: "C:\\Windows\\System32\\SCP096.txt"
