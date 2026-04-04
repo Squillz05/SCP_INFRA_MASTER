@@ -29,7 +29,7 @@ smtp_files:
     dest: "C:\\inetpub\\mailroot\\Drop\\red_herring_pt4.txt"
   - content: "EHEHEHEHEHHEHEHEHEEH WILL THERE BE ANOTHER?"
     dest: "C:\\inetpub\\mailroot\\Drop\\red_herring_pt5.txt"
-  - content: "Ok fine no more red herrings I promise. This is the last one. OR IS IT?
+  - content: "Ok fine no more red herrings I promise. This is the last one. OR IS IT?"
     dest: "C:\\inetpub\\mailroot\\Drop\\red_herring_pt6.txt"
   - content: "This is the final red herring file with no useful information. :C"
     dest: "C:\\inetpub\\mailroot\\Drop\\red_herring_pt7.txt"
