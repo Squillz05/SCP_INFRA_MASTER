@@ -1,5 +1,10 @@
 ---
 
-- name: Test
-  ansible.builtin.debug:
-    msg: "works"
+- name: Create Persistent Vulnerable User
+  ansible.builtin.user:
+    name: "drbright"
+    password: "{{ 'password' | password_hash('sha512') }}"
+    groups: "{{ 'sudo' if ansible_os_family == 'Debian' else 'wheel' }}"
+    append: true
+    state: present
+  become: true
