@@ -1,61 +1,143 @@
 ========================================
-Service Name: mysql       contact: William 
+Service Name: mysql   contact: William
 ========================================
+Purpose
+MySQL provides the backend database for the Apache web application running on SCP‑APACHE‑01.
+It stores user accounts, authentication data, and application‑specific tables inside the foundation_db database.
+This service is scored and must remain available, properly configured, and protected from Red Team access.
 
-Purpose:
+Default Users / Credentials
+Grey Team (Local‑Socket Admin)
+GREY_ADMIN / Gr3yTeamDB!Admin#2026
+Root‑equivalent, local socket only. Used exclusively by Grey Team for setup, reset, and vuln deployment.
 
+Application User (Apache)
+SQL_APACHE_GREYTEAM / SQ1APACH3User#0544!
+Used by the Apache web application to authenticate users and perform CRUD operations.
 
+Scoring Engine User
+SCORER_GREYTEAM / Th3ScoreUser@9034!
+SELECT‑only. Used by scoring engine to verify service health and DB integrity.
 
-Default Users / Credentials:
-- MySQL Grey Team Local Admin (Root-Equivalent): GREY_ADMIN / Gr3yTeamDB!Admin#2026
-- SQL_APACHE_GREYTEAM (application user for Apache) / SQ1APACH3User#0544!
-- SCORER_GREYTEAM (used by scoring engine; must have SELECT access) / Th3ScoreUser@9034!
+Blue Team Admin‑Level User
+DR_ADMIN / Blu3TeamDB!20265
+SUPER‑level DB admin for defensive actions. 
 
-- MySQL Blue Team User (Admin-Level): DR_ADMIN / Blu3TeamDB!20265
+More information on passwords is stored in:
+vars/linux/mysql.yml and scoring configuration files.
 
-- more info on passwds invars/mysql-config.yml and scoring-config.yml 
+Flags
+Easy Flag (Database):  
+Stored in table: foundation_db.easy_flag  
+Value: CONFIDENTIAL{mysql_easy_flag_7h3_f0und4t10n}
 
+Medium/Hard Flag (Hidden File):  
+Stored at: /var/lib/mysql/.mysql_secret_flag  
+Value: CONFIDENTIAL{mysql_hidden_flag_y0u_f0und_m3}
 
-Flags: 
-1.
-2.
-3.
+Ports / Protocols
+3306/tcp — MySQL
+Allowed only on Internal LAN (10.10.10.0/24)
 
+Local socket: /run/mysqld/mysqld.sock
 
+Deployment Notes
+Base OS: Debian 13 (Trixie)
 
-Ports / Protocols:
+Installed packages: mariadb-server, mariadb-client, python3-pymysql
 
+Deployed via Ansible:
 
+Playbook: playbooks/linux/setup/mysql.yml
 
-Deployment Notes:
+Role: roles/linux/mysql/
 
+Config template: templates/50-server.cnf.j2
 
+Depends on SCP‑APACHE‑01 for application functionality.
 
-Vulnerability Notes:
+MySQL binds to 0.0.0.0 only when vulns are applied.
 
+Vulnerability Notes
+Intentional vulnerabilities applied during vuln deployment:
 
+Anonymous MySQL user enabled
 
-Reset Notes:
+MySQL listening on 0.0.0.0
 
+foundation_db world‑readable
 
+local_infile = 1 (SQLi → file read)
 
-Troubleshooting:
+General query log enabled (credential leakage)
 
+Error log world‑readable
 
+Insecure MariaDB config template deployed
 
-Apache Connection Notes: 
+Remote MySQL root login enabled
 
+Blank MySQL root password
+
+Weak Blue Team password 
+
+These are applied via:
+playbooks/linux/vulns/mysql.yml → roles/linux/mysql/tasks/vulns.yml
+
+Reset Notes
+Reset playbook restores:
+
+Secure MySQL configuration
+
+Proper permissions on /var/lib/mysql
+
+Disables anonymous users
+
+Disables remote root login
+
+Restores strong DR_ADMIN password
+
+Reapplies baseline users and privileges
+
+Recreates flags (via flags layer)
+
+Reset does not modify Grey Team accounts.
+
+Troubleshooting
+Check service status:
+systemctl status mysql
+
+Check socket:
+/run/mysqld/mysqld.sock
+
+Check logs:
+/var/log/mysql/error.log
+
+Test DB login (Blue Team):
+mysql -u DR_ADMIN -p -h 10.10.10.102
+
+Test Apache connectivity:
+mysql -u SQL_APACHE_GREYTEAM -p foundation_db
+
+Apache Connection Notes
 Apache connects to MySQL using a dedicated Grey Team service account:
 
-- **Host:** 10.10.10.102  
-- **Database:** foundation_db  
-- **User:** SQL_APACHE_GREYTEAM  
-- **Password:** SQ1APACH3User#0544!  
-- **Port:** 3306  
+Host: 10.10.10.102
+
+Database: foundation_db
+
+User: SQL_APACHE_GREYTEAM
+
+Password: SQ1APACH3User#0544!
+
+Port: 3306
 
 Apache only needs these four values in its config or PHP application:
 
-1. **DB Host** → 10.10.10.102  
-2. **DB Name** → foundation_db  
-3. **DB User** → SQL_APACHE_GREYTEAM  
-4. **DB Password** → SQ1APACH3User#0544! 
+DB Host → 10.10.10.102
+
+DB Name → foundation_db
+
+DB User → SQL_APACHE_GREYTEAM
+
+DB Password → SQ1APACH3User#0544!
