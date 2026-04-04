@@ -20,7 +20,7 @@ Ports / Protocols: Port 1194/udp
 
 
 
-Deployment Notes: Add cyberrange user to rocky on deployment; install ansible-core, epel-release, sshpass before running ansible. Modify /etc/shadow and /etc/passwd for no password on root or bin.
+Deployment Notes: Add cyberrange user to rocky on deployment; install ansible-core, epel-release, sshpass before running ansible. 
 #cloud-config
 users:
   - name: cyberrange
