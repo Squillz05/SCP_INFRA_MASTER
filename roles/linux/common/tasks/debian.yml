@@ -1,0 +1,37 @@
+---
+# Debian-only Linux Common Role
+
+- name: Install Base Packages (APT)
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  become: true
+  loop: "{{ apt_packages }}"
+
+- name: Set Hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}.{{ domain }}"
+  become: true
+
+- name: Set /etc/hosts
+  ansible.builtin.template:
+    src: ./templates/hosts.j2
+    dest: /etc/hosts
+  become: true
+
+- name: Set DNS Server (Debian)
+  ansible.builtin.command:
+    cmd: "resolvectl dns {{ ansible_default_ipv4.interface }} {{ dns }}"
+  become: true
+  ignore_errors: yes
+
+- name: Add Users
+  ansible.builtin.user:
+    user: "{{ item.username }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    groups: "{{ ['sudo'] if item.privileged else [] }}"
+    append: yes
+    state: present
+  become: true
+  loop: "{{ users }}"
