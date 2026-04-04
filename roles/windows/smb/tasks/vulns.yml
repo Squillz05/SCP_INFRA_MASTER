@@ -46,7 +46,3 @@
     state: present
     groups: "{{ item.groups }}"
   loop: "{{ smb_local_users }}"
-
-- name: Disable Windows Defender
-  ansible.windows.win_shell: |
-    Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue
