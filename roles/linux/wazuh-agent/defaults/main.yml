@@ -1,0 +1,28 @@
+---
+# noqa: var-naming[no-role-prefix]
+# ========================================================
+# Default variables for linux wazuh-agent role
+# Override in vars/unscored/wazuh.yml
+# ========================================================
+
+wazuh_version: "4.9"
+
+# Manager connection — set this to the Wazuh manager IP
+wazuh_manager_ip: "10.10.10.122"
+wazuh_manager_port: 1514
+wazuh_manager_protocol: "tcp"
+wazuh_enrollment_port: 1515
+
+# Agent name defaults to inventory hostname
+wazuh_agent_name: "{{ inventory_hostname }}"
+
+# File integrity monitoring dirs — competition-specific paths watched on agents
+wazuh_agent_fim_dirs:
+  - /etc
+  - /usr/bin
+  - /usr/sbin
+  - /home
+  - /root
+  - /opt
+
+wazuh_agent_fim_frequency: 300

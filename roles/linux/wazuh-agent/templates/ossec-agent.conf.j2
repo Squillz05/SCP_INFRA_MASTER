@@ -1,0 +1,134 @@
+<!--
+    Wazuh Agent Configuration
+    Managed by Ansible — do not edit manually.
+    Role: linux/wazuh-agent
+    Manager: {{ wazuh_manager_ip }}
+-->
+<ossec_config>
+
+  <!-- ====================================================
+       Manager connection
+  ===================================================== -->
+  <client>
+    <server>
+      <address>{{ wazuh_manager_ip }}</address>
+      <port>{{ wazuh_manager_port }}</port>
+      <protocol>{{ wazuh_manager_protocol }}</protocol>
+    </server>
+    <config-profile>ubuntu, ubuntu20, ubuntu22</config-profile>
+    <notify_time>10</notify_time>
+    <time-reconnect>60</time-reconnect>
+    <auto_restart>yes</auto_restart>
+    <crypto_method>aes</crypto_method>
+
+    <!-- Auto-enrollment: agent registers itself with the manager -->
+    <enrollment>
+      <enabled>yes</enabled>
+      <manager_address>{{ wazuh_manager_ip }}</manager_address>
+      <port>{{ wazuh_enrollment_port }}</port>
+      <agent_name>{{ wazuh_agent_name }}</agent_name>
+      <auto_method>yes</auto_method>
+      <delay_after_enrollment>20</delay_after_enrollment>
+      <use_source_ip>no</use_source_ip>
+    </enrollment>
+  </client>
+
+  <!-- ====================================================
+       Logging
+  ===================================================== -->
+  <client_buffer>
+    <disabled>no</disabled>
+    <queue_size>5000</queue_size>
+    <events_per_second>500</events_per_second>
+  </client_buffer>
+
+  <!-- ====================================================
+       File Integrity Monitoring
+  ===================================================== -->
+  <syscheck>
+    <disabled>no</disabled>
+    <frequency>{{ wazuh_agent_fim_frequency }}</frequency>
+    <scan_on_start>yes</scan_on_start>
+    <alert_new_files>yes</alert_new_files>
+
+{% for dir in wazuh_agent_fim_dirs %}
+    <directories check_all="yes" report_changes="yes" realtime="yes">{{ dir }}</directories>
+{% endfor %}
+
+    <!-- Ignore noisy/volatile paths -->
+    <ignore>/etc/mtab</ignore>
+    <ignore>/etc/hosts.deny</ignore>
+    <ignore>/etc/adjtime</ignore>
+    <ignore>/etc/resolv.conf</ignore>
+    <ignore type="sregex">.log$|.swp$</ignore>
+
+    <skip_nfs>yes</skip_nfs>
+    <skip_dev>yes</skip_dev>
+    <skip_proc>yes</skip_proc>
+    <skip_sys>yes</skip_sys>
+    <max_files_per_second>100</max_files_per_second>
+  </syscheck>
+
+  <!-- ====================================================
+       Rootkit detection
+  ===================================================== -->
+  <rootcheck>
+    <disabled>no</disabled>
+    <check_files>yes</check_files>
+    <check_trojans>yes</check_trojans>
+    <check_dev>yes</check_dev>
+    <check_sys>yes</check_sys>
+    <check_pids>yes</check_pids>
+    <check_ports>yes</check_ports>
+    <check_if>yes</check_if>
+    <frequency>43200</frequency>
+    <skip_nfs>yes</skip_nfs>
+  </rootcheck>
+
+  <!-- ====================================================
+       Log collection
+  ===================================================== -->
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/auth.log</location>
+  </localfile>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/syslog</location>
+  </localfile>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/dpkg.log</location>
+  </localfile>
+
+  <!-- systemd journal (catches service stops/starts) -->
+  <localfile>
+    <log_format>journald</log_format>
+    <location>journald</location>
+  </localfile>
+
+  <!-- ====================================================
+       System inventory / vulnerability detection
+  ===================================================== -->
+  <wodle name="syscollector">
+    <disabled>no</disabled>
+    <interval>1h</interval>
+    <scan_on_start>yes</scan_on_start>
+    <hardware>yes</hardware>
+    <os>yes</os>
+    <network>yes</network>
+    <packages>yes</packages>
+    <ports all="no">yes</ports>
+    <processes>yes</processes>
+  </wodle>
+
+  <!-- ====================================================
+       Active response (log only — no automatic blocking)
+  ===================================================== -->
+  <active-response>
+    <disabled>yes</disabled>
+  </active-response>
+
+</ossec_config>

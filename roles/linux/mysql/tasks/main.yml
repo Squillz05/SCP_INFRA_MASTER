@@ -1,1 +1,110 @@
 ---
+# Install MySQL (MariaDB) packages
+- name: Install MySQL (MariaDB) packages
+  ansible.builtin.apt:
+    name: "{{ mysql_packages }}"
+    state: present
+    update_cache: true
+  become: true
+
+# Ensure MySQL service is enabled and running
+- name: Enable and start MySQL service
+  ansible.builtin.systemd:
+    name: "{{ mysql_service_name }}"
+    state: started
+    enabled: true
+  become: true
+
+# Deploy MySQL server configuration
+- name: Deploy MySQL server configuration
+  ansible.builtin.template:
+    src: 50-server.cnf.j2
+    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart MySQL
+  become: true
+
+# Create Grey Team local-socket admin (root-equivalent)
+# Used only by Grey Team for reset/vuln playbooks
+- name: Create Grey Team local admin user
+  community.mysql.mysql_user:
+    name: "{{ mysql_grey_admin_user }}"
+    password: "{{ mysql_grey_admin_pass }}"
+    host: "localhost"
+    priv: "*.*:ALL,GRANT"
+    login_unix_socket: /run/mysqld/mysqld.sock
+    check_implicit_admin: true
+    state: present
+  become: true
+
+# Create the foundation_db database
+- name: Create foundation_db database
+  community.mysql.mysql_db:
+    name: "{{ mysql_database }}"
+    state: present
+    login_user: "{{ mysql_grey_admin_user }}"
+    login_password: "{{ mysql_grey_admin_pass }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+  become: true
+
+# Create Apache → MySQL service account
+- name: Create Apache MySQL user
+  community.mysql.mysql_user:
+    name: "{{ mysql_app_user }}"
+    password: "{{ mysql_app_pass }}"
+    priv: "{{ mysql_database }}.*:ALL"
+    host: "%"
+    state: present
+    login_user: "{{ mysql_grey_admin_user }}"
+    login_password: "{{ mysql_grey_admin_pass }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+  become: true
+
+# Create scoring engine → MySQL service account
+- name: Create scoring engine MySQL user
+  community.mysql.mysql_user:
+    name: "{{ mysql_scorer_user }}"
+    password: "{{ mysql_scorer_pass }}"
+    priv: "{{ mysql_database }}.*:SELECT"
+    host: "%"
+    state: present
+    login_user: "{{ mysql_grey_admin_user }}"
+    login_password: "{{ mysql_grey_admin_pass }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+  become: true
+
+# Create Blue Team admin-level MySQL user
+# Allows defensive actions but cannot pivot to OS root
+- name: Create Blue Team MySQL admin user
+  community.mysql.mysql_user:
+    name: "{{ mysql_blue_user }}"
+    password: "{{ mysql_blue_pass }}"
+    host: "%"
+    priv: "*.*:SUPER,PROCESS,RELOAD,SELECT,SHOW DATABASES"
+    state: present
+    login_user: "{{ mysql_grey_admin_user }}"
+    login_password: "{{ mysql_grey_admin_pass }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+  become: true
+
+# Allow MySQL port through firewall
+- name: Allow MySQL port through firewall
+  ansible.builtin.ufw:
+    rule: allow
+    port: "{{ mysql_firewall_port }}"
+    proto: tcp
+  become: true
+
+# Verify MySQL is running
+- name: Verify MySQL service status
+  ansible.builtin.systemd:
+    name: "{{ mysql_service_name }}"
+    state: started
+  register: mysql_status
+  become: true
+
+- name: Debug MySQL status
+  ansible.builtin.debug:
+    msg: "MySQL is running: {{ mysql_status.status.ActiveState }}"

@@ -1,0 +1,84 @@
+---
+# ========================================================
+# Role: windows/wazuh-agent
+# Description: Installs and configures the Wazuh agent on
+#              Windows Server 2019/2022 hosts.
+#              Agent auto-enrolls with the Wazuh manager.
+# Author: Grey Team
+# Date Created: 04/03/2026
+# ========================================================
+
+# ----------------------------------------------------------
+# 1. Check if Wazuh agent is already installed
+# ----------------------------------------------------------
+- name: Check if Wazuh agent is installed
+  ansible.windows.win_stat:
+    path: "{{ wazuh_windows_install_dir }}\\ossec.conf"
+  register: wazuh_win_installed
+
+# ----------------------------------------------------------
+# 2. Download MSI installer
+# ----------------------------------------------------------
+- name: Download Wazuh agent MSI
+  ansible.windows.win_get_url:
+    url: "{{ wazuh_windows_msi_url }}"
+    dest: "{{ wazuh_windows_msi_dest }}"
+    force: false
+  when: not wazuh_win_installed.stat.exists
+
+# ----------------------------------------------------------
+# 3. Install Wazuh agent via MSI
+#    WAZUH_MANAGER and WAZUH_REGISTRATION_SERVER trigger
+#    automatic enrollment on first start.
+# ----------------------------------------------------------
+- name: Install Wazuh agent MSI
+  ansible.windows.win_package:
+    path: "{{ wazuh_windows_msi_dest }}"
+    product_id: "Wazuh Agent"
+    arguments:
+      - "/q"
+      - "WAZUH_MANAGER={{ wazuh_manager_ip }}"
+      - "WAZUH_REGISTRATION_SERVER={{ wazuh_manager_ip }}"
+      - "WAZUH_REGISTRATION_PORT={{ wazuh_enrollment_port }}"
+      - "WAZUH_AGENT_NAME={{ wazuh_agent_name }}"
+    state: present
+  when: not wazuh_win_installed.stat.exists
+  register: wazuh_msi_install
+
+# ----------------------------------------------------------
+# 4. Deploy custom ossec.conf (overrides MSI defaults)
+# ----------------------------------------------------------
+- name: Deploy Windows agent ossec.conf
+  ansible.windows.win_template:
+    src: ossec-agent-win.conf.j2
+    dest: "{{ wazuh_windows_install_dir }}\\ossec.conf"
+  notify: Restart Wazuh agent service
+
+# ----------------------------------------------------------
+# 5. Enable and start WazuhSvc
+# ----------------------------------------------------------
+- name: Enable and start Wazuh agent service
+  ansible.windows.win_service:
+    name: WazuhSvc
+    start_mode: auto
+    state: started
+
+# ----------------------------------------------------------
+# 6. Verify the service is running
+# ----------------------------------------------------------
+- name: Verify WazuhSvc is running
+  ansible.windows.win_service:
+    name: WazuhSvc
+  register: wazuh_svc_status
+
+- name: Fail if Wazuh agent service is not running
+  ansible.builtin.fail:
+    msg: "WazuhSvc is not running on {{ inventory_hostname }} — state: {{ wazuh_svc_status.state }}"
+  when: wazuh_svc_status.state != "running"
+
+- name: Display agent install summary
+  ansible.builtin.debug:
+    msg:
+      - "Wazuh agent installed on {{ inventory_hostname }} ({{ ansible_host }})"
+      - "Manager  : {{ wazuh_manager_ip }}:{{ wazuh_manager_port }}"
+      - "Service  : WazuhSvc — {{ wazuh_svc_status.state }}"

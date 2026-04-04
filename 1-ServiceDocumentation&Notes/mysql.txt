@@ -7,9 +7,11 @@ Purpose:
 
 
 Default Users / Credentials:
-- root (local administrative user) / NoR00tF0rY0u!!!78
+- MySQL Grey Team Local Admin (Root-Equivalent): GREY_ADMIN / Gr3yTeamDB!Admin#2026
 - SQL_APACHE_GREYTEAM (application user for Apache) / SQ1APACH3User#0544!
 - SCORER_GREYTEAM (used by scoring engine; must have SELECT access) / Th3ScoreUser@9034!
+
+- MySQL Blue Team User (Admin-Level): DR_ADMIN / Blu3TeamDB!20265
 
 - more info on passwds invars/mysql-config.yml and scoring-config.yml 
 

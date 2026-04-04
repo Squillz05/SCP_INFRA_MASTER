@@ -1,0 +1,117 @@
+---
+# ========================================================
+# Role: linux/wazuh-agent
+# Description: Installs and configures the Wazuh agent on
+#              Rocky Linux (dnf/rpm) and Ubuntu (apt) hosts.
+#              Agent auto-enrolls with the Wazuh manager.
+# Author: Grey Team
+# Date Created: 04/03/2026
+# ========================================================
+
+# ----------------------------------------------------------
+# 1. Add Wazuh repository — branch on OS family
+# ----------------------------------------------------------
+
+# --- Debian/Ubuntu path ---
+- name: "[apt] Install Wazuh GPG key"
+  ansible.builtin.get_url:
+    url: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    dest: /tmp/GPG-KEY-WAZUH
+    mode: '0644'
+  when: ansible_os_family == "Debian"
+
+- name: "[apt] Import Wazuh GPG key into keyring"
+  ansible.builtin.shell:
+    cmd: >
+      gpg --no-default-keyring
+      --keyring gnupg-ring:/usr/share/keyrings/wazuh.gpg
+      --import /tmp/GPG-KEY-WAZUH
+      && chmod 644 /usr/share/keyrings/wazuh.gpg
+    creates: /usr/share/keyrings/wazuh.gpg
+  when: ansible_os_family == "Debian"
+
+- name: "[apt] Add Wazuh repository"
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main"
+    state: present
+    filename: wazuh
+  when: ansible_os_family == "Debian"
+
+# --- RHEL/Rocky path ---
+- name: "[dnf] Import Wazuh GPG key"
+  ansible.builtin.rpm_key:
+    key: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: "[dnf] Add Wazuh repository"
+  ansible.builtin.yum_repository:
+    name: wazuh
+    description: "Wazuh {{ wazuh_version }} repository"
+    baseurl: https://packages.wazuh.com/4.x/yum/
+    gpgcheck: true
+    gpgkey: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    enabled: true
+    protect: true
+  when: ansible_os_family == "RedHat"
+
+# ----------------------------------------------------------
+# 2. Install wazuh-agent
+# ----------------------------------------------------------
+- name: "[apt] Install wazuh-agent"
+  ansible.builtin.apt:
+    name: wazuh-agent
+    state: present
+    update_cache: true
+  environment:
+    WAZUH_MANAGER: "{{ wazuh_manager_ip }}"
+  when: ansible_os_family == "Debian"
+
+- name: "[dnf] Install wazuh-agent"
+  ansible.builtin.dnf:
+    name: wazuh-agent
+    state: present
+  environment:
+    WAZUH_MANAGER: "{{ wazuh_manager_ip }}"
+  when: ansible_os_family == "RedHat"
+
+# ----------------------------------------------------------
+# 3. Deploy agent ossec.conf
+# ----------------------------------------------------------
+- name: Deploy agent ossec.conf
+  ansible.builtin.template:
+    src: ossec-agent.conf.j2
+    dest: /var/ossec/etc/ossec.conf
+    owner: root
+    group: wazuh
+    mode: '0640'
+  notify: Restart wazuh-agent
+
+# ----------------------------------------------------------
+# 4. Enable and start wazuh-agent
+# ----------------------------------------------------------
+- name: Enable and start wazuh-agent
+  ansible.builtin.systemd:
+    name: wazuh-agent
+    enabled: true
+    state: started
+    daemon_reload: true
+
+# ----------------------------------------------------------
+# 5. Verify agent is running and connected
+# ----------------------------------------------------------
+- name: Wait for agent to connect to manager (up to 60s)
+  ansible.builtin.command:
+    cmd: /var/ossec/bin/wazuh-control status
+  register: agent_status
+  changed_when: false
+  retries: 6
+  delay: 10
+  until: "'wazuh-agentd is running' in agent_status.stdout"
+
+- name: Display agent status
+  ansible.builtin.debug:
+    msg:
+      - "Wazuh agent installed on {{ inventory_hostname }} ({{ ansible_host }})"
+      - "Manager: {{ wazuh_manager_ip }}:{{ wazuh_manager_port }}"
+      - "{{ agent_status.stdout_lines | join(' | ') }}"

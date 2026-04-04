@@ -1,0 +1,46 @@
+---
+# =====================================================================
+# Playbook: wazuh-agents-linux.yml
+# Description: Installs and enrolls the Wazuh agent on all Linux
+#              competition endpoints (openssh, openvpn).
+#              Agents auto-enroll with scp-wazuh-01.
+# Author: Grey Team
+# Date Created: 04/03/2026
+#
+# Prerequisites:
+#   - wazuh-manager.yml must have been run first
+#   - Manager must be reachable on 10.10.10.122:1515 from agents
+#
+# Usage:
+#   ansible-playbook playbooks/unscored/setup/wazuh-agents-linux.yml
+#
+#   Single host:
+#   ansible-playbook playbooks/unscored/setup/wazuh-agents-linux.yml \
+#     --limit scp-openssh-01
+# =====================================================================
+
+- name: Deploy Wazuh agents — Linux competition endpoints
+  hosts: wazuh_linux_agents
+  gather_facts: true
+  become: true
+  vars_files:
+    - ../../../vars/unscored/wazuh.yml
+
+  pre_tasks:
+    - name: Verify manager is reachable on enrollment port
+      ansible.builtin.wait_for:
+        host: "{{ wazuh_manager_ip }}"
+        port: "{{ wazuh_enrollment_port }}"
+        timeout: 15
+      ignore_errors: true
+      register: mgr_reachable
+
+    - name: Warn if manager is not reachable
+      ansible.builtin.debug:
+        msg: >
+          WARNING: Cannot reach {{ wazuh_manager_ip }}:{{ wazuh_enrollment_port }}.
+          Agent will install but may not enroll until the manager is up.
+      when: mgr_reachable.failed is defined and mgr_reachable.failed
+
+  roles:
+    - linux/wazuh-agent

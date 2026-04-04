@@ -1,0 +1,189 @@
+---
+# ========================================================
+# Role: wazuh-manager
+# Description: Deploys Wazuh all-in-one (indexer + manager + dashboard)
+#              on Ubuntu using the official Wazuh install script.
+# Target: scp-wazuh-01 (10.10.10.122) — Ubuntu 22.04/24.04
+# Author: Grey Team
+# Date Created: 04/03/2026
+#
+# Ports opened by this role:
+#   1514/tcp  — agent event forwarding
+#   1515/tcp  — agent auto-enrollment (authd)
+#   443/tcp   — Wazuh dashboard (HTTPS)
+#   55000/tcp — Wazuh manager REST API
+# ========================================================
+
+# 1. Pre-flight checks
+- name: Verify target is Ubuntu
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == "Ubuntu"
+    fail_msg: "wazuh-manager role requires Ubuntu. Got: {{ ansible_distribution }}"
+    success_msg: "OS check passed: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+- name: Check if Wazuh manager is already installed
+  ansible.builtin.stat:
+    path: /etc/wazuh-manager/ossec.conf
+  register: wazuh_already_installed
+
+# 2. Install prerequisites
+- name: Install prerequisites
+  ansible.builtin.apt:
+    name:
+      - curl
+      - apt-transport-https
+      - gnupg
+    state: present
+    update_cache: true
+
+# 3. Run Wazuh all-in-one install script (idempotent via stat check)
+- name: Download Wazuh install script
+  ansible.builtin.get_url:
+    url: "https://packages.wazuh.com/{{ wazuh_version }}/wazuh-install.sh"
+    dest: /tmp/wazuh-install.sh
+    mode: '0755'
+    force: false
+  when: not wazuh_already_installed.stat.exists
+
+- name: Run Wazuh all-in-one installation (this takes ~10 minutes)
+  ansible.builtin.command:
+    cmd: bash /tmp/wazuh-install.sh --all-in-one --ignore-check
+  when: not wazuh_already_installed.stat.exists
+  async: 900
+  poll: 30
+  register: wazuh_install_result
+
+- name: Display install output
+  ansible.builtin.debug:
+    var: wazuh_install_result.stdout_lines
+  when:
+    - not wazuh_already_installed.stat.exists
+    - wazuh_install_result is defined
+
+# ----------------------------------------------------------
+# 4. Retrieve generated admin credentials
+# ----------------------------------------------------------
+- name: Find wazuh-install-files.tar (credentials archive)
+  ansible.builtin.find:
+    paths: /root
+    patterns: "wazuh-install-files.tar"
+  register: creds_tar
+
+- name: Extract Wazuh passwords file
+  ansible.builtin.command:
+    cmd: "tar -O -xf {{ creds_tar.files[0].path }} wazuh-install-files/wazuh-passwords.txt"
+  register: wazuh_passwords
+  changed_when: false
+  when: creds_tar.matched > 0
+
+- name: Display Wazuh credentials (save these!)
+  ansible.builtin.debug:
+    msg: "{{ wazuh_passwords.stdout_lines }}"
+  when:
+    - wazuh_passwords is defined
+    - wazuh_passwords.stdout is defined
+
+# ----------------------------------------------------------
+# 5. Deploy custom manager ossec.conf
+# ----------------------------------------------------------
+- name: Back up default ossec.conf
+  ansible.builtin.copy:
+    src: /var/ossec/etc/ossec.conf
+    dest: /var/ossec/etc/ossec.conf.orig
+    remote_src: true
+    force: false
+    owner: root
+    group: wazuh
+    mode: '0640'
+
+- name: Deploy manager ossec.conf
+  ansible.builtin.template:
+    src: ossec-manager.conf.j2
+    dest: /var/ossec/etc/ossec.conf
+    owner: root
+    group: wazuh
+    mode: '0640'
+    validate: /var/ossec/bin/verify-agent-conf -f %s
+  notify: Restart wazuh-manager
+
+# ----------------------------------------------------------
+# 6. Open required firewall ports (ufw)
+# ----------------------------------------------------------
+- name: Allow Wazuh agent enrollment port (1515/tcp)
+  community.general.ufw:
+    rule: allow
+    port: "1515"
+    proto: tcp
+  ignore_errors: true
+
+- name: Allow Wazuh agent communication port (1514/tcp)
+  community.general.ufw:
+    rule: allow
+    port: "1514"
+    proto: tcp
+  ignore_errors: true
+
+- name: Allow Wazuh dashboard (443/tcp)
+  community.general.ufw:
+    rule: allow
+    port: "443"
+    proto: tcp
+  ignore_errors: true
+
+- name: Allow Wazuh REST API (55000/tcp)
+  community.general.ufw:
+    rule: allow
+    port: "55000"
+    proto: tcp
+  ignore_errors: true
+
+# ----------------------------------------------------------
+# 7. Ensure all Wazuh services are enabled and running
+# ----------------------------------------------------------
+- name: Enable and start Wazuh services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+  loop:
+    - wazuh-indexer
+    - wazuh-manager
+    - wazuh-dashboard
+
+# ----------------------------------------------------------
+# 8. Verify manager is accepting connections
+# ----------------------------------------------------------
+- name: Wait for Wazuh manager enrollment port (1515)
+  ansible.builtin.wait_for:
+    host: "0.0.0.0"
+    port: 1515
+    timeout: 60
+
+- name: Wait for Wazuh dashboard (443)
+  ansible.builtin.wait_for:
+    host: "0.0.0.0"
+    port: 443
+    timeout: 60
+
+- name: Verify wazuh-manager service is active
+  ansible.builtin.command:
+    cmd: /var/ossec/bin/wazuh-control status
+  register: wazuh_status
+  changed_when: false
+
+- name: Display Wazuh deployment summary
+  ansible.builtin.debug:
+    msg:
+      - "============================================================"
+      - "Wazuh all-in-one deployed successfully on {{ inventory_hostname }}"
+      - "============================================================"
+      - "Dashboard : https://{{ wazuh_manager_ip }}:{{ wazuh_dashboard_port }}"
+      - "API       : https://{{ wazuh_manager_ip }}:55000"
+      - "Manager   : {{ wazuh_manager_ip }}:{{ wazuh_manager_port }} (agents)"
+      - "Enrollment: {{ wazuh_manager_ip }}:{{ wazuh_enrollment_port }} (auto-enroll)"
+      - "------------------------------------------------------------"
+      - "Agent config — point agents at: {{ wazuh_manager_ip }}"
+      - "See credentials in: /root/wazuh-install-files.tar"
+      - "============================================================"

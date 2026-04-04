@@ -1,0 +1,20 @@
+---
+# ============================================================
+# Setup MySQL Server (Debian 13)
+# Used for: Apache backend + Scoring Engine
+# Author: William Walker (Grey Team)
+# ============================================================
+
+- name: Setup MySQL Server
+  hosts: mysql_servers
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - ../../../vars/linux/common.yml
+    - ../../../vars/linux/mysql.yml
+
+  roles:
+    - linux/common
+    - linux/mysql
+
