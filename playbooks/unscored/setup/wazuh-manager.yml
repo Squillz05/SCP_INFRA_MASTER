@@ -1,0 +1,63 @@
+---
+# =====================================================================
+# Playbook: wazuh-manager.yml
+# Description: Deploys Wazuh all-in-one (indexer + manager + dashboard)
+#              to scp-wazuh-01 (10.10.10.211).
+# Author: Grey Team
+# Date Created: 04/03/2026
+#
+# Usage:
+#   ansible-playbook playbooks/unscored/setup/wazuh-manager.yml
+#
+# Dashboard will be available at:
+#   https://10.10.10.211:443
+#   Default credentials are printed at the end of the run.
+#   Full credentials stored in /root/wazuh-install-files.tar on the host.
+#
+# After deployment, run the agent playbooks:
+#   ansible-playbook playbooks/unscored/setup/wazuh-agents-linux.yml
+#   ansible-playbook playbooks/unscored/setup/wazuh-agents-windows.yml
+# =====================================================================
+
+- name: Deploy Wazuh Manager (all-in-one)
+  hosts: wazuh_manager
+  gather_facts: true
+  become: true
+  vars_files:
+    - ../../../vars/unscored/wazuh.yml
+
+  pre_tasks:
+    - name: Display deployment target
+      ansible.builtin.debug:
+        msg:
+          - "Deploying Wazuh {{ wazuh_version }} all-in-one to {{ inventory_hostname }} ({{ ansible_host }})"
+          - "This will install: wazuh-indexer, wazuh-manager, wazuh-dashboard"
+          - "Estimated time: ~10 minutes"
+
+  roles:
+    - unscored/wazuh-manager
+
+  post_tasks:
+    - name: Confirm wazuh-manager is active
+      ansible.builtin.systemd:
+        name: wazuh-manager
+      register: mgr_status
+
+    - name: Confirm wazuh-indexer is active
+      ansible.builtin.systemd:
+        name: wazuh-indexer
+      register: idx_status
+
+    - name: Confirm wazuh-dashboard is active
+      ansible.builtin.systemd:
+        name: wazuh-dashboard
+      register: dash_status
+
+    - name: Assert all services running
+      ansible.builtin.assert:
+        that:
+          - mgr_status.status.ActiveState == "active"
+          - idx_status.status.ActiveState == "active"
+          - dash_status.status.ActiveState == "active"
+        fail_msg: "One or more Wazuh services failed to start."
+        success_msg: "All Wazuh services are running."

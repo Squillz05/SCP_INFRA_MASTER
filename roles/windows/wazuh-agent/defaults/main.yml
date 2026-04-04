@@ -1,0 +1,25 @@
+---
+# ========================================================
+# Default variables for windows wazuh-agent role
+# Override in vars/unscored/wazuh.yml
+# ========================================================
+
+wazuh_version: "4.9"
+wazuh_windows_msi_version: "4.9.0-1"
+
+# Manager connection
+wazuh_manager_ip: "10.10.10.211"
+wazuh_manager_port: 1514
+wazuh_enrollment_port: 1515
+
+# Agent name defaults to inventory hostname
+wazuh_agent_name: "{{ inventory_hostname }}"
+
+# MSI download URL
+wazuh_windows_msi_url: "https://packages.wazuh.com/4.x/windows/wazuh-agent-{{ wazuh_windows_msi_version }}.msi"
+
+# Local temp path for MSI on Windows target
+wazuh_windows_msi_dest: 'C:\Windows\Temp\wazuh-agent.msi'
+
+# Wazuh install path on Windows
+wazuh_windows_install_dir: 'C:\Program Files (x86)\ossec-agent'

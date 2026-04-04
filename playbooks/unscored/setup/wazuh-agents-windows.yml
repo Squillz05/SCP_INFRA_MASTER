@@ -1,0 +1,47 @@
+---
+# =====================================================================
+# Playbook: wazuh-agents-windows.yml
+# Description: Installs and enrolls the Wazuh agent on all Windows
+#              competition endpoints (dc, smb, smtp).
+#              Agents auto-enroll with scp-wazuh-01.
+# Author: Grey Team
+# Date Created: 04/03/2026
+#
+# Prerequisites:
+#   - wazuh-manager.yml must have been run first
+#   - Manager must be reachable on 10.10.10.211:1515 from agents
+#   - Windows hosts must have internet access to download the MSI
+#     (or host the MSI locally and override wazuh_windows_msi_url)
+#
+# Usage:
+#   ansible-playbook playbooks/unscored/setup/wazuh-agents-windows.yml
+#
+#   Single host:
+#   ansible-playbook playbooks/unscored/setup/wazuh-agents-windows.yml \
+#     --limit scp_dc01
+# =====================================================================
+
+- name: Deploy Wazuh agents — Windows competition endpoints
+  hosts: wazuh_windows_agents
+  gather_facts: true
+  vars_files:
+    - ../../../vars/unscored/wazuh.yml
+
+  pre_tasks:
+    - name: Verify manager is reachable on enrollment port
+      ansible.windows.win_wait_for:
+        host: "{{ wazuh_manager_ip }}"
+        port: "{{ wazuh_enrollment_port }}"
+        timeout: 15
+      ignore_errors: true
+      register: mgr_reachable_win
+
+    - name: Warn if manager is not reachable
+      ansible.builtin.debug:
+        msg: >
+          WARNING: Cannot reach {{ wazuh_manager_ip }}:{{ wazuh_enrollment_port }}.
+          Agent will install but may not enroll until the manager is up.
+      when: mgr_reachable_win.failed is defined and mgr_reachable_win.failed
+
+  roles:
+    - windows/wazuh-agent

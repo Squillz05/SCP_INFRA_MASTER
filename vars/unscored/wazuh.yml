@@ -1,0 +1,52 @@
+---
+# ========================================================
+# Wazuh Competition Configuration
+# Used by: wazuh-manager, linux/wazuh-agent, windows/wazuh-agent
+# ========================================================
+
+# Wazuh version to deploy
+wazuh_version: "4.9"
+wazuh_windows_msi_version: "4.9.0-1"
+
+# ----------------------------------------------------------
+# Manager network config
+# IP of scp-wazuh-01 on SCPmainnet
+# ----------------------------------------------------------
+wazuh_manager_ip: "10.10.10.211"
+wazuh_manager_port: 1514
+wazuh_manager_protocol: "tcp"
+wazuh_enrollment_port: 1515
+wazuh_dashboard_port: 443
+
+# ----------------------------------------------------------
+# Enrollment
+# No password — agents self-register automatically
+# ----------------------------------------------------------
+wazuh_enrollment_use_password: "no"
+wazuh_email_notification: "no"
+wazuh_alert_log_level: 3
+
+# ----------------------------------------------------------
+# File Integrity Monitoring — Linux agents
+# Competition service paths that should never change
+# ----------------------------------------------------------
+wazuh_agent_fim_dirs:
+  - /etc
+  - /usr/bin
+  - /usr/sbin
+  - /home
+  - /root
+  - /opt
+
+wazuh_agent_fim_frequency: 300
+
+# ----------------------------------------------------------
+# File Integrity Monitoring — Manager (scp-wazuh-01)
+# ----------------------------------------------------------
+wazuh_fim_dirs:
+  - /etc
+  - /usr/bin
+  - /usr/sbin
+  - /opt/scp-scoring
+
+wazuh_fim_frequency: 300

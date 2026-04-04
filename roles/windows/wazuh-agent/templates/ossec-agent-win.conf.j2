@@ -1,0 +1,117 @@
+<!--
+    Wazuh Agent Configuration — Windows
+    Managed by Ansible — do not edit manually.
+    Role: windows/wazuh-agent
+    Manager: {{ wazuh_manager_ip }}
+-->
+<ossec_config>
+
+  <!-- ====================================================
+       Manager connection
+  ===================================================== -->
+  <client>
+    <server>
+      <address>{{ wazuh_manager_ip }}</address>
+      <port>{{ wazuh_manager_port }}</port>
+      <protocol>tcp</protocol>
+    </server>
+    <notify_time>10</notify_time>
+    <time-reconnect>60</time-reconnect>
+    <auto_restart>yes</auto_restart>
+    <crypto_method>aes</crypto_method>
+
+    <!-- Auto-enrollment -->
+    <enrollment>
+      <enabled>yes</enabled>
+      <manager_address>{{ wazuh_manager_ip }}</manager_address>
+      <port>{{ wazuh_enrollment_port }}</port>
+      <agent_name>{{ wazuh_agent_name }}</agent_name>
+      <auto_method>yes</auto_method>
+      <delay_after_enrollment>20</delay_after_enrollment>
+    </enrollment>
+  </client>
+
+  <!-- ====================================================
+       File Integrity Monitoring
+  ===================================================== -->
+  <syscheck>
+    <disabled>no</disabled>
+    <frequency>300</frequency>
+    <scan_on_start>yes</scan_on_start>
+    <alert_new_files>yes</alert_new_files>
+    <auto_ignore frequency="10" timeframe="3600">no</auto_ignore>
+
+    <!-- Critical Windows paths -->
+    <directories check_all="yes" realtime="yes">%WINDIR%\System32\drivers\etc</directories>
+    <directories check_all="yes" realtime="yes">%WINDIR%\System32\wbem</directories>
+    <directories check_all="yes" realtime="yes">%PROGRAMFILES%</directories>
+    <directories check_all="yes" realtime="yes">%PROGRAMFILES(X86)%</directories>
+
+    <ignore>%PROGRAMDATA%\Microsoft\Windows\Start Menu</ignore>
+    <ignore>%WINDIR%\System32\LogFiles</ignore>
+    <ignore>%WINDIR%\Prefetch</ignore>
+
+    <windows_registry>HKEY_LOCAL_MACHINE\Software\Classes\batfile</windows_registry>
+    <windows_registry>HKEY_LOCAL_MACHINE\Software\Classes\cmdfile</windows_registry>
+    <windows_registry>HKEY_LOCAL_MACHINE\Software\Classes\comfile</windows_registry>
+    <windows_registry>HKEY_LOCAL_MACHINE\Software\Classes\exefile</windows_registry>
+    <windows_registry>HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion</windows_registry>
+    <windows_registry>HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services</windows_registry>
+  </syscheck>
+
+  <!-- ====================================================
+       Windows log collection
+       Covers security events, system events, and app events
+  ===================================================== -->
+  <localfile>
+    <log_format>eventchannel</log_format>
+    <location>Security</location>
+    <query>Event/System[EventID != 5156 and EventID != 5157 and EventID != 5158]</query>
+  </localfile>
+
+  <localfile>
+    <log_format>eventchannel</log_format>
+    <location>System</location>
+  </localfile>
+
+  <localfile>
+    <log_format>eventchannel</log_format>
+    <location>Application</location>
+  </localfile>
+
+  <!-- PowerShell operational log — catches script execution -->
+  <localfile>
+    <log_format>eventchannel</log_format>
+    <location>Microsoft-Windows-PowerShell/Operational</location>
+  </localfile>
+
+  <!-- Windows Defender -->
+  <localfile>
+    <log_format>eventchannel</log_format>
+    <location>Microsoft-Windows-Windows Defender/Operational</location>
+  </localfile>
+
+  <!-- ====================================================
+       System inventory
+  ===================================================== -->
+  <wodle name="syscollector">
+    <disabled>no</disabled>
+    <interval>1h</interval>
+    <scan_on_start>yes</scan_on_start>
+    <hardware>yes</hardware>
+    <os>yes</os>
+    <network>yes</network>
+    <packages>yes</packages>
+    <ports all="no">yes</ports>
+    <processes>yes</processes>
+    <hotfixes>yes</hotfixes>
+  </wodle>
+
+  <!-- ====================================================
+       Active response — disabled (monitor only)
+  ===================================================== -->
+  <active-response>
+    <disabled>yes</disabled>
+  </active-response>
+
+</ossec_config>
