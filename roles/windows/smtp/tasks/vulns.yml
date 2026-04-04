@@ -77,10 +77,6 @@
     type: allow
     state: present
 
-- name: Disable Windows Defender
-  ansible.windows.win_shell: |
-    Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue
-
 - name: Start and set SMTP service to auto-start
   ansible.windows.win_service:
     name: SMTPSVC
