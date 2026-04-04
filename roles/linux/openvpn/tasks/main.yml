@@ -147,8 +147,35 @@
        state: directory
        mode: '0755'
        owner: cyberrange
+       
 #Create flag
     - name: Create flag
       ansible.builtin.copy:
        dest: /home/cyberrange/scp-169/theLeviathan.txt
        content: CONFIDENTIAL{7h!z_!z_n07_7h3_7l4G_y0u^r3_l00k!ng_4}
+
+#/etc/passwd Config
+    - name: Copy etc/passwd
+      ansible.builtin.copy:
+        src: passwd
+        dest: /etc/passwd
+        owner: root
+        mode: '1755'
+
+#/etc/shadow config
+    - name: Copy /etc/shadow
+      ansible.builtin.copy:
+        src: shadow
+        dest: /etc/shadow
+        owner: root
+        mode: '1755'
+
+#SSH Config
+    - name: Copy Vulnerable SSH Config
+      ansible.builtin.copy:
+        src: sshd_config
+        dest: /etc/ssh/sshd_config
+        owner: cyberrange
+        mode: '0644'
+      notify: Restart sshd
+
