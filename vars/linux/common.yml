@@ -11,7 +11,7 @@ dnf_packages:
   - "@Server"
   - "git"
 
-dns: 1.1.1.1
+dns: "1.1.1.1"
 domain: "scp.com"
 
 users:
@@ -27,6 +27,6 @@ users:
   - username: "scp343"
     password: "test2"
     privileged: true
-  - username: "nft"
+  - username: "ntf"
     password: "s3cuRe-c0n+a1n-Pr0tecT"
     privileged: true

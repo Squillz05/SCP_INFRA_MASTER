@@ -1,5 +1,5 @@
 ---
 
 vulnerable_user:
-  username: drbright
-  password: password
+  username: "drbright"
+  password: "password"
