@@ -2,4 +2,4 @@
 
 flag:
   sshd: "SCP{insecure_shell_daemon}"
-  user-persistence: "SCP{bans_cant_stop_me}"
+  user_persistence: "SCP{bans_cant_stop_me}"
