@@ -1,1 +1,154 @@
 ---
+#Install OpenVPN
+- name: Install OpenVPN
+  ansible.builtin.dnf:
+    name: openvpn
+    state: present
+
+#Install Easy-RSA
+- name: Install Easy-RSA
+  ansible.builtin.dnf:
+    name: easy-rsa
+    state: present
+
+#Create OpenVPN Folder
+- name: Create OpenVPN Folder
+  ansible.builtin.file:
+    path: /etc/openvpn
+    state: directory
+    owner: cyberrange
+    mode: '0777'
+
+
+#Create PKI Directories (because init-pki isn't working)
+- name: Create PKI Directories
+  ansible.builtin.file:
+    path: "/etc/openvpn/pki/{{ item }}"
+    state: directory
+    owner: cyberrange
+    mode: '0777'
+  loop:
+   - private
+   - issued
+   - reqs
+   - certs
+
+#Create Empty index.txt
+- name: Create index.txt
+  ansible.builtin.file:
+    path: /etc/openvpn/pki/index.txt
+    state: touch
+    owner: cyberrange
+    mode: '0777'
+  
+#Create serial file
+- name: Create serial file
+  ansible.builtin.copy:
+    dest: /etc/openvpn/pki/serial
+    content: "01\n"
+    owner: cyberrange
+    mode: '0777'
+
+#Create crl.pem
+- name: Create crl.pem
+  ansible.builtin.file:
+    path: /etc/openvpn/pki/crl.pem
+    state: touch
+    owner: cyberrange
+    mode: '0777'
+
+#Build CA
+- name: Build CA
+  ansible.builtin.command:
+    cmd: "/usr/share/easy-rsa/3/easyrsa --batch build-ca nopass"
+    chdir: /etc/openvpn
+  args:
+    creates: /etc/openvpn/pki/ca.crt
+
+#Generate Client Cert and Key
+- name: Generate Client Cert and Key
+  ansible.builtin.command:
+    cmd: "/usr/share/easy-rsa/3/easyrsa --batch build-client-full client1 nopass"
+    chdir: /etc/openvpn
+  args:
+    creates: /etc/openvpn/pki/issued/client1.crt
+
+#Server cert and Key
+- name: Generate Server Cert and Key
+  ansible.builtin.command:
+    cmd: "/usr/share/easy-rsa/3/easyrsa --batch build-server-full server nopass"
+    chdir: /etc/openvpn
+  args:
+    creates: /etc/openvpn/pki/issued/server.crt
+
+#DH Parameters
+- name: Create DH Parameters
+  ansible.builtin.command:
+    cmd: "/usr/share/easy-rsa/3/easyrsa gen-dh"
+    chdir: /etc/openvpn
+  args:
+    creates: /etc/openvpn/pki/dh.pem
+#Enable IP Forwarding
+    - name: Enable IP Forwarding
+      ansible.builtin.sysctl:
+       name: net.ipv4.ip_forward
+       value: "1"
+       state: present
+       reload: yes
+  
+#OpenVPN Config
+    - name: Copy OpenVPN Server Config
+      ansible.builtin.copy:
+        src: server.conf
+        dest: /etc/openvpn/server/server.conf
+        owner: cyberrange
+        mode: '0644'
+      notify: Restart OpenVPN
+
+#Install firewalld
+    - name: Install firewalld
+      ansible.builtin.dnf:
+       name: firewalld
+       state: present
+
+#Enable firewalld
+    - name: Enable firewalld
+      ansible.builtin.systemd:
+       name: firewalld
+       state: started
+       enabled: true
+
+#Install firewalld Python
+    - name: Install firewalld Python
+      ansible.builtin.dnf:
+       name: python3-firewall
+       state: present
+
+
+#Allow traffic through firewall
+    - name: Open firewall port
+      ansible.builtin.firewalld:
+       port: "{{ openvpn_port }}/{{ openvpn_proto}}"
+       permanent: true
+       state: enabled
+       immediate: true
+
+#Enable and Start
+    - name: Enable and start OpenVPN
+      ansible.builtin.systemd:
+       name: openvpn-server@server
+       enabled: true
+       state: started
+       
+#Create flag directory
+    - name: Create flag directory
+      ansible.builtin.file:
+       path: /home/cyberrange/scp-169
+       state: directory
+       mode: '0755'
+       owner: cyberrange
+#Create flag
+    - name: Create flag
+      ansible.builtin.copy:
+       dest: /home/cyberrange/scp-169/theLeviathan.txt
+       content: CONFIDENTIAL{7h!z_!z_n07_7h3_7l4G_y0u^r3_l00k!ng_4}

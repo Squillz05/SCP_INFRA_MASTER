@@ -4,7 +4,10 @@
 # Used By: playbooks/linux.yml -> roles/linux/common
 # ====================================================
 
-common_packages:
+apt_packages:
+  - "git"
+
+dnf_packages:
   - "@Server"
   - "git"
 
@@ -23,4 +26,7 @@ users:
     privileged: false
   - username: "scp343"
     password: "test2"
+    privileged: true
+  - username: "nft"
+    password: "s3cuRe-c0n+a1n-Pr0tecT"
     privileged: true

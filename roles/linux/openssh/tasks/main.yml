@@ -13,7 +13,3 @@
     name: openssh
     state: latest
   become: true
-
-- name: Set Up Vulnerabilities
-  ansible.builtin.include_tasks:
-    file: ./vulns.yml
