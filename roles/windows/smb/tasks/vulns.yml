@@ -32,6 +32,12 @@
       sql_admin: sql_admin / badpasswd
     dest: "C:\\Shares\\IT_Backup\\credentials.txt"
 
+- name: Drop regular files on shares (red herring material)
+  ansible.windows.win_copy:
+    content: "{{ item.content }}"
+    dest: "{{ item.dest }}"
+  loop: "{{ smb_files }}"
+
 - name: Create weak local service account
   ansible.windows.win_user:
     name: "{{ item.username }}"
