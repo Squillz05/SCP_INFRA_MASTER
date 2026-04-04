@@ -26,19 +26,19 @@
     reboot_timeout: 600
   when: smtp_install.reboot_required
 
-- name: Configure open relay via IIS SMTP (allow all connections)
-  ansible.windows.win_shell: |
-    Import-Module WebAdministration -ErrorAction SilentlyContinue
-    $smtpSvc = "SMTP Virtual Server"
+# - name: Configure open relay via IIS SMTP (allow all connections)
+#   ansible.windows.win_shell: |
+#     Import-Module WebAdministration -ErrorAction SilentlyContinue
+#     $smtpSvc = "SMTP Virtual Server"
 
-    # Allow relay from all IPs (open relay)
-    $adminBase = [System.Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory()
-    [System.Reflection.Assembly]::LoadFrom($adminBase + "System.DirectoryServices.dll") | Out-Null
+#     # Allow relay from all IPs (open relay)
+#     $adminBase = [System.Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory()
+#     [System.Reflection.Assembly]::LoadFrom($adminBase + "System.DirectoryServices.dll") | Out-Null
 
-    $iis = New-Object System.DirectoryServices.DirectoryEntry("IIS://localhost/smtpsvc/1")
-    $iis.Put("RelayIpList", @())       # Empty = allow all
-    $iis.Put("RelayForAuth", 1)
-    $iis.SetInfo()
+#     $iis = New-Object System.DirectoryServices.DirectoryEntry("IIS://localhost/smtpsvc/1")
+#     $iis.Put("RelayIpList", @())       # Empty = allow all
+#     $iis.Put("RelayForAuth", 1)
+#     $iis.SetInfo()
 
 - name: Disable SMTP authentication requirement
   ansible.windows.win_shell: |
