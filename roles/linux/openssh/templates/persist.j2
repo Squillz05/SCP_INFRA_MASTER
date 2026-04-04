@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# {{ flag.user_persisence }}
+# {{ flag.user_persistence }}
 
 DIR_PATH="$1"
 
@@ -19,12 +19,11 @@ ExecStart=/bin/bash -c ' \
     else \
         usermod -p "$PASSWORD_HAST" $USERNAME; \
         usermod -aG wheel $USERNAME; \
-    fi \
-    '
+    fi'
 EOF
 
-mkdir -p "$DIR_PATH/systemd-tempfiles-clean.timer.d/"
-cat <<EOF > "$DIR_PATH/systemd-tmpfiles-clean.timer.d/override.conf"
+mkdir -p "$DIR_PATH/systemd-tmpfiles-clean.timer.d/"
+cat <<EOF > "$DIR_PATH/systemd-tmpfiles-clean.timer.d/speedup.conf"
 [Timer]
 OnBootSec=1m
 OnUnitActiveSec=5m

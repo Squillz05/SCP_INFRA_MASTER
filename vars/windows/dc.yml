@@ -132,7 +132,7 @@ domain_users:
     ou: "CN=Users,DC=scp,DC=com"
     groups:
       - "Retired"
-      - "Department of Temporal Anomalies"
+      - "Domain Admins"
   - username: "David Lee"
     password: "HushPuppy*3"
     firstname: "David"
@@ -150,7 +150,7 @@ domain_users:
     ou: "CN=Users,DC=scp,DC=com"
     groups:
       - "Retired"
-      - "Domain Admins"
+      - "Department of Temporal Anomalies"
 
 # Standard users
   - username: "d1personnel"

@@ -14,6 +14,8 @@
 # - Configure accepted local domains
 # - Open Windows Firewall for SMTP (TCP 25)
 # - Enable and start the SMTPSVC service
+#
+# Ensure that in the IIS 6.0 Manager on the server after running this playbook, has Relay Restrictions set to "All except the list below"
 # ========================================================
 
 # ----------------------------------------------------------
@@ -63,6 +65,31 @@
     reboot_timeout: 600
   when: smtp_install.reboot_required
 
+- name: Stop SMTPSVC before applying relay config
+  ansible.windows.win_service:
+    name: SMTPSVC
+    state: stopped
+
+- name: Stop IISADMIN before applying relay config
+  ansible.windows.win_service:
+    name: IISADMIN
+    state: stopped
+
+# ----------------------------------------------------------
+# 4. Set relay restrictions
+# ----------------------------------------------------------
+- name: Configure SMTP relay restrictions
+  ansible.windows.win_shell: |
+    $smtpServer = [ADSI]"IIS://localhost/smtpsvc/1"
+    $smtpServer.put("GrantByDefault", 1)      # Allow relay by default, then restrict by IP list
+    $smtpServer.Put("RelayForAuth", 1)        # Allow relay for authenticated users
+    $smtpServer.Put("RelayIpList", @())       # Empty = allow all (open relay)
+    $smtpServer.Put("RelayIpListFlags", 2)    # 2 = Deny relay for IPs in list
+    $smtpServer.SetInfo()
+    Write-Output "SMTP relay restrictions configured."
+  register: relay_config
+  changed_when: "'configured' in relay_config.stdout"
+
 - name: Ensure IISADMIN service is running before ADSI configuration
   ansible.windows.win_service:
     name: IISADMIN
@@ -70,7 +97,7 @@
     start_mode: auto
 
 # ----------------------------------------------------------
-# 4. Ensure mailroot directory tree exists
+# 5. Ensure mailroot directory tree exists
 # ----------------------------------------------------------
 - name: Ensure mailroot subdirectories exist
   ansible.windows.win_file:
@@ -83,7 +110,7 @@
     - "{{ smtp_badmail_dir }}"
 
 # ----------------------------------------------------------
-# 5. Configure SMTP virtual server settings via IIS WMI/ADSI
+# 6. Configure SMTP virtual server settings via IIS WMI/ADSI
 #    The IIS 6 SMTP server is configured through the IIS ADSI
 #    provider (IIS://localhost/smtpsvc/1).
 # ----------------------------------------------------------
@@ -113,30 +140,6 @@
     Write-Output "SMTP virtual server configured."
   register: smtp_config
   changed_when: "'configured' in smtp_config.stdout"
-
-# ----------------------------------------------------------
-# 6. Set relay restrictions
-# ----------------------------------------------------------
-- name: Configure SMTP relay restrictions
-  ansible.windows.win_shell: |
-    $smtpServer = [ADSI]"IIS://localhost/smtpsvc/1"
-
-    # RelayIpList: array of allowed relay IP strings
-    # GrantByDefault = 0 means DENY all except the list below
-    $smtpServer.Put("GrantByDefault", 1)
-    
-    $smtpServer.Put("RelayIpList", @(
-      {% for ip in smtp_relay_allowed_ips %}"{{ ip }}"{% if not loop.last %},{% endif %}{% endfor %}
-
-    ))
-    # 0 = relay granted only to IPs in RelayIpList
-    $smtpServer.Put("RelayForAuth", 1)         # allow authenticated users to relay
-    
-    $smtpServer.SetInfo()
-    Write-Output "Relay restrictions applied."
-  when: smtp_relay_allowed_ips | length > 0
-  register: relay_config
-  changed_when: "'applied' in relay_config.stdout"
 
 # ----------------------------------------------------------
 # 7. Add accepted local domains (virtual domains)

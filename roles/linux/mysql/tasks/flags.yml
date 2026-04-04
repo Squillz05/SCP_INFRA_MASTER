@@ -1,0 +1,33 @@
+---
+# Deploy MySQL Flags
+
+# Create tables for DB flags
+- name: Ensure flag tables exist
+  community.mysql.mysql_query:
+    query: "CREATE TABLE IF NOT EXISTS {{ item.table }} (flag VARCHAR(255));"
+    login_user: "{{ mysql_grey_admin_user }}"
+    login_password: "{{ mysql_grey_admin_pass }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+  loop: "{{ mysql_flags }}"
+  when: item.table is defined
+
+# Insert DB flags
+- name: Insert flags into MySQL
+  community.mysql.mysql_query:
+    query: "REPLACE INTO {{ item.table }} (flag) VALUES ('{{ item.value }}');"
+    login_user: "{{ mysql_grey_admin_user }}"
+    login_password: "{{ mysql_grey_admin_pass }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+  loop: "{{ mysql_flags }}"
+  when: item.table is defined
+
+# Create hidden file-based flags
+- name: Create hidden file-based flags
+  ansible.builtin.copy:
+    dest: "{{ item.file_path }}"
+    content: "{{ item.value }}"
+    owner: mysql
+    group: mysql
+    mode: '0600'
+  loop: "{{ mysql_flags }}"
+  when: item.file_path is defined

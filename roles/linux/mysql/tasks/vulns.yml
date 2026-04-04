@@ -1,1 +1,87 @@
 ---
+# Apply MySQL Vulnerabilities
+# These tasks intentionally weaken the database for Red Team exploitation.
+
+# Enable anonymous MySQL user
+- name: Enable anonymous MySQL user
+  community.mysql.mysql_user:
+    name: ""
+    host: "%"
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock
+    check_implicit_admin: true
+  when: mysql_vuln_enable_anonymous
+
+# Bind MySQL to all interfaces (0.0.0.0)
+- name: Set MySQL bind-address to 0.0.0.0
+  ansible.builtin.lineinfile:
+    path: /etc/mysql/mariadb.conf.d/50-server.cnf
+    regexp: '^bind-address'
+    line: "bind-address = 0.0.0.0"
+  notify: Restart MySQL
+  when: mysql_vuln_bind_all
+
+# Make foundation_db world-readable
+- name: Make foundation_db directory world-readable
+  ansible.builtin.file:
+    path: "{{ mysql_data_dir }}/{{ mysql_database }}"
+    mode: '0777'
+    recurse: true
+  when: mysql_vuln_world_readable_db
+
+# Enable local_infile (SQLi → file read)
+- name: Enable local_infile
+  community.mysql.mysql_variables:
+    variable: local_infile
+    value: 1
+    login_unix_socket: /run/mysqld/mysqld.sock
+    check_implicit_admin: true
+  when: mysql_vuln_enable_local_infile
+
+# Enable general query log (credential leakage)
+- name: Enable general query log
+  community.mysql.mysql_variables:
+    variable: general_log
+    value: 1
+    login_unix_socket: /run/mysqld/mysqld.sock
+    check_implicit_admin: true
+  when: mysql_vuln_enable_general_log
+
+# Make MySQL error log world-readable
+- name: Make MySQL error log world-readable
+  ansible.builtin.file:
+    path: /var/log/mysql/error.log
+    mode: '0777'
+  when: mysql_vuln_world_readable_error_log
+
+# Deploy insecure MariaDB config template
+- name: Deploy insecure MariaDB config
+  ansible.builtin.template:
+    src: insecure-50-server.cnf.j2
+    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart MySQL
+  when: mysql_vuln_insecure_config
+
+# Enable remote MySQL root login (real root account)
+- name: Allow remote MySQL root login
+  community.mysql.mysql_user:
+    name: "root"
+    host: "%"
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock
+    check_implicit_admin: true
+  when: mysql_vuln_remote_root_login
+
+# Make MySQL root password blank (real root account)
+- name: Set blank MySQL root password
+  community.mysql.mysql_user:
+    name: "root"
+    host: "%"
+    password: ""
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock
+    check_implicit_admin: true
+  when: mysql_vuln_blank_root_password

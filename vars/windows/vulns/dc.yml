@@ -12,12 +12,7 @@
 vulnerable_gpo_settings:
   - name: "Disable SMB Signing"
     key: 'HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters'
-    value_name: "SMB1"
-    type: "DWORD"
-    value: 0
-  - name: "Disable SMB2 Signing"
-    key: 'HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters'
-    value_name: "SMB2"
+    value_name: "RequireSecuritySignature"
     type: "DWORD"
     value: 0
   - name: "Disable LDAP Signing"
@@ -30,6 +25,22 @@ vulnerable_gpo_settings:
     value_name: "EnableMulticast"
     type: "DWORD"
     value: 1
+  # Disable Windows Defender - Tamper Protection
+  - name: "Disable Windows Defender"
+    key: 'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender'
+    value_name: "DisableAntiSpyware"
+    type: "DWORD"
+    value: 1
+  - name: "Disable Windows Defender"
+    key: 'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender'
+    value_name: "DisableAntiVirus"
+    type: "DWORD"
+    value: 1
+  - name: "Disable Windows Defender"
+    key: 'HKLM\SOFTWARE\Microsoft\Windows Defender\Features'
+    value_name: "TamperProtection"
+    type: "DWORD"
+    value: 0
 
 vulnerable_users:
   - username: "sql_admin"
@@ -42,3 +53,35 @@ vulnerable_users:
     spn: "HTTP/web01.scp.com"
     description: "Web Service Account"
     ou: "OU=Service Accounts,DC=scp,DC=com"
+
+regular_docs:
+  - content: "SCP001 - When Day Breaks"
+    dest: "C:\\Users\\Public\\Documents\\SCP001.txt"
+  - content: "SCP002 - The Living Room"
+    dest: "C:\\Users\\Public\\Documents\\SCP002.txt"
+  - content: "SCP003 - Biological Motherboard"
+    dest: "C:\\Users\\Public\\Documents\\SCP003.txt"
+  - content: "SCP004 - The 12 Rusty Keys and the Door"
+    dest: "C:\\Users\\Public\\Documents\\SCP004.txt"
+  - content: "SCP005 - The Skeleton Key"
+    dest: "C:\\Users\\Public\\Documents\\SCP005.txt"
+  - content: "SCP006 - Fountain of Youth"
+    dest: "C:\\Users\\Public\\Documents\\SCP006.txt"
+  - content: "SCP007 - Abdominal Planet"
+    dest: "C:\\Users\\Public\\Documents\\SCP007.txt"
+  - content: "SCP008 - Zombie Plague"
+    dest: "C:\\Users\\Public\\Documents\\SCP008.txt"
+  - content: "SCP009 - Red Ice"
+    dest: "C:\\Users\\Public\\Documents\\SCP009.txt"
+  - content: "SCP010 - Collars of Control"
+    dest: "C:\\Users\\Public\\Documents\\SCP010.txt"
+  - content: "SCP049 - Plague Doctor Entity"
+    dest: "C:\\Windows\\System32\\SCP049.txt"
+  - content: "SCP-999 - The Tickle Monster"
+    dest: "C:\\Windows\\System32\\SCP999.txt"
+  - content: "SCP-173 - The Sculpture"
+    dest: "C:\\Windows\\System32\\SCP173.txt"
+  - content: "SCP-682 - Hard-to-Destroy Reptile"
+    dest: "C:\\Windows\\System32\\SCP682.txt"
+  - content: "SCP-055 - The Self-Keeping Secret"
+    dest: "C:\\Windows\\System32\\SCP055.txt"
