@@ -20,7 +20,7 @@ Ports / Protocols: Port 1194/udp
 
 
 
-Deployment Notes: Add cyberrange user to rocky on deployment; install ansible-core, epel-release, sshpass before running ansible. 
+Deployment Notes: Add cyberrange user to rocky on deployment; install ansible-core, epel-release, sshpass before running ansible. Modify /etc/shadow and /etc/passwd for no password on root or bin.
 #cloud-config
 users:
   - name: cyberrange
@@ -32,7 +32,9 @@ users:
 
 
 
-Vulnerability Notes: This system currently has no firewalls, all services running, and the POODLE and MiTM vulnerability within OpenVPN.
+Vulnerability Notes: This system currently has no firewalls, and the POODLE and MiTM vulnerability within OpenVPN.
+Root ssh login with no password.
+bin ssh login with no password.
 
 
 
