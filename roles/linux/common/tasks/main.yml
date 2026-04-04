@@ -1,0 +1,10 @@
+---
+# Main dispatcher for OS-specific tasks
+
+- name: Load Debian tasks
+  ansible.builtin.include_tasks: debian.yml
+  when: ansible_os_family == "Debian"
+
+- name: Load Rocky Linux tasks
+  ansible.builtin.include_tasks: rocky.yml
+  when: ansible_os_family == "RedHat"
