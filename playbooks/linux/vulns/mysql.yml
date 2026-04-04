@@ -4,12 +4,13 @@
 - name: Apply MySQL Vulnerabilities
   hosts: mysql_servers
   become: true
-  gather_facts: true
-
   vars_files:
     - ../../../vars/linux/common.yml
     - ../../../vars/linux/mysql.yml
     - ../../../vars/linux/vulns/mysql.yml
 
-  roles:
-    - linux/mysql
+  tasks:
+    - import_role:
+        name: linux/mysql
+        tasks_from: vulns.yml
+
