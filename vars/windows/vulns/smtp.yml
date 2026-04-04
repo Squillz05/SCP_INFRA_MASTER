@@ -11,3 +11,38 @@ smtp_users:
 
 smtp_relay_domains:
   - "*"                          # Open relay - accepts mail for any domain
+
+smtp_files:
+  - content: "WOOOHOOOO"
+    dest: "C:\\inetpub\\mailroot\\Drop\\first_email.txt"
+  - content: "This is not a test email for you."
+    dest: "C:\\inetpub\\mailroot\\Drop\\test.txt"
+  - content: "Nah I'll think about it......... Ok Fineeee..... Since you insist... CONFIDENTIAL{S0m3_3m41l_c0nt3nt}"
+    dest: "C:\\inetpub\\mailroot\\Drop\\Annoyin.txt"
+  - content: "This is a red herring file with no useful information. Or is it?"
+    dest: "C:\\inetpub\\mailroot\\Drop\\red_herring.txt"
+  - content: "This is another red herring file with no useful information. Or is it?"
+    dest: "C:\\inetpub\\mailroot\\Drop\\red_herring_pt2.txt"
+  - content: "This is yet another red herring file with no useful information. Or is it?"
+    dest: "C:\\inetpub\\mailroot\\Drop\\red_herring_pt3.txt"
+  - content: "ENOUGH WITH THE RED HERRINGS ALREADY. Nah I lied"
+    dest: "C:\\inetpub\\mailroot\\Drop\\red_herring_pt4.txt"
+  - content: "EHEHEHEHEHHEHEHEHEEH WILL THERE BE ANOTHER?"
+    dest: "C:\\inetpub\\mailroot\\Drop\\red_herring_pt5.txt"
+  - content: "Ok fine no more red herrings I promise. This is the last one. OR IS IT?
+    dest: "C:\\inetpub\\mailroot\\Drop\\red_herring_pt6.txt"
+  - content: "This is the final red herring file with no useful information. :C"
+    dest: "C:\\inetpub\\mailroot\\Drop\\red_herring_pt7.txt"
+  - content: |
+      ; SCP SMTP Server Internal Configuration
+      ; Last Modified: 2026-01-01
+      ; Author: sysadmin@scp.com
+
+      [relay]
+      allowed_hosts = 10.10.10.0/24
+      admin_token = CONFIDENTIAL{A1hH$_Sk1B3d4_SCP}
+      
+      [logging]
+      level = verbose
+      path = C:\Inetpub\mailroot\logs
+    dest: 'C:\Windows\System32\inetsrv\smtp_config.txt'
