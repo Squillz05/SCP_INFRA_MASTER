@@ -25,6 +25,22 @@ vulnerable_gpo_settings:
     value_name: "EnableMulticast"
     type: "DWORD"
     value: 1
+  # Disable Windows Defender - Tamper Protection
+  - name: "Disable Windows Defender"
+    key: 'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender'
+    value_name: "DisableAntiSpyware"
+    type: "DWORD"
+    value: 1
+  - name: "Disable Windows Defender"
+    key: 'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender'
+    value_name: "DisableAntiVirus"
+    type: "DWORD"
+    value: 1
+  - name: "Disable Windows Defender"
+    key: 'HKLM\SOFTWARE\Microsoft\Windows Defender\Features'
+    value_name: "TamperProtection"
+    type: "DWORD"
+    value: 0
 
 vulnerable_users:
   - username: "sql_admin"
