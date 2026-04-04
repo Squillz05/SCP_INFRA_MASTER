@@ -1,0 +1,14 @@
+---
+# MySQL Flags (Debian 13)
+# These values are applied ONLY when running the flags playbook.
+
+mysql_flags:
+  # Easy flag: stored directly in the database
+  - name: easy_flag
+    table: "foundation_db.easy_flag"
+    value: "CONFIDENTIAL{mysql_easy_flag_7h3_f0und4t10n}"
+
+  # Medium/Hard flag: stored on disk in a MySQL-related directory
+  - name: hard_flag
+    file_path: "/var/lib/mysql/.mysql_secret_flag"
+    value: "CONFIDENTIAL{mysql_hidden_flag_y0u_f0und_m3}"
