@@ -89,13 +89,12 @@
     login_unix_socket: /run/mysqld/mysqld.sock
   become: true
 
-# Allow MySQL port through firewall
-- name: Allow MySQL port through firewall
-  ansible.builtin.ufw:
-    rule: allow
-    port: "{{ mysql_firewall_port }}"
-    proto: tcp
-  become: true
+- name: Allow MySQL port via nftables (Debian)
+  ansible.builtin.command:
+    cmd: "nft add rule inet filter input tcp dport {{ mysql_firewall_port }} accept"
+  when: ansible_os_family == "Debian"
+  ignore_errors: yes
+
 
 # Verify MySQL is running
 - name: Verify MySQL service status
