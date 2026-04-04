@@ -9,7 +9,7 @@
 #
 # Prerequisites:
 #   - wazuh-manager.yml must have been run first
-#   - Manager must be reachable on 10.10.10.211:1515 from agents
+#   - Manager must be reachable on 10.10.10.122:1515 from agents
 #
 # Usage:
 #   ansible-playbook playbooks/unscored/setup/wazuh-agents-linux.yml

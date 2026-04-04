@@ -12,7 +12,7 @@ wazuh_windows_msi_version: "4.9.0-1"
 # Manager network config
 # IP of scp-wazuh-01 on SCPmainnet
 # ----------------------------------------------------------
-wazuh_manager_ip: "10.10.10.211"
+wazuh_manager_ip: "10.10.10.122"
 wazuh_manager_port: 1514
 wazuh_manager_protocol: "tcp"
 wazuh_enrollment_port: 1515

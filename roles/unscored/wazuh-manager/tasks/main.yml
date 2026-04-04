@@ -3,7 +3,7 @@
 # Role: wazuh-manager
 # Description: Deploys Wazuh all-in-one (indexer + manager + dashboard)
 #              on Ubuntu using the official Wazuh install script.
-# Target: scp-wazuh-01 (10.10.10.211) — Ubuntu 22.04/24.04
+# Target: scp-wazuh-01 (10.10.10.122) — Ubuntu 22.04/24.04
 # Author: Grey Team
 # Date Created: 04/03/2026
 #
@@ -14,9 +14,7 @@
 #   55000/tcp — Wazuh manager REST API
 # ========================================================
 
-# ----------------------------------------------------------
 # 1. Pre-flight checks
-# ----------------------------------------------------------
 - name: Verify target is Ubuntu
   ansible.builtin.assert:
     that:
@@ -29,9 +27,7 @@
     path: /etc/wazuh-manager/ossec.conf
   register: wazuh_already_installed
 
-# ----------------------------------------------------------
 # 2. Install prerequisites
-# ----------------------------------------------------------
 - name: Install prerequisites
   ansible.builtin.apt:
     name:
@@ -41,9 +37,7 @@
     state: present
     update_cache: true
 
-# ----------------------------------------------------------
 # 3. Run Wazuh all-in-one install script (idempotent via stat check)
-# ----------------------------------------------------------
 - name: Download Wazuh install script
   ansible.builtin.get_url:
     url: "https://packages.wazuh.com/{{ wazuh_version }}/wazuh-install.sh"
