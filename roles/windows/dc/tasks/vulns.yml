@@ -19,15 +19,29 @@
       New-GPO -Name "{{ item.name }}"
       New-GPLink -Name "{{ item.name }}" -Target "DC=scp,DC=com" -Enforced Yes
     }
-
-    # Set registry value
-    Set-GPRegistryValue `
+    
+    # Check if registry value is already set correctly
+    $current = Get-GPRegistryValue `
       -Name "{{ item.name }}" `
       -Key "{{ item.key }}" `
       -ValueName "{{ item.value_name }}" `
-      -Type "{{ item.type }}" `
-      -Value {{ item.value }}
+      -ErrorAction SilentlyContinue
+
+    if ($current -and $current.Value -eq {{ item.value }}) {
+      Write-Output "SKIPPED - already configured"
+    } else {
+      Set-GPRegistryValue `
+        -Name "{{ item.name }}" `
+        -Key "{{ item.key }}" `
+        -ValueName "{{ item.value_name }}" `
+        -Type "{{ item.type }}" `
+        -Value {{ item.value }}
+      Write-Output "CHANGED - value applied"
+    }
   loop: "{{ vulnerable_gpo_settings }}"
+  register: gpo_result
+  changed_when: "'CHANGED' in gpo_result.stdout"
+
 
 - name: Create AD service accounts with SPNs (Kerberoastable)
   community.windows.win_domain_user:
