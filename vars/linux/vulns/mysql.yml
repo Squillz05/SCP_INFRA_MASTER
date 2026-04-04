@@ -1,0 +1,30 @@
+---
+# MySQL Vulnerability Variables (Debian 13)
+# These settings are applied ONLY when running the vuln playbook.
+
+# Enable anonymous MySQL user
+mysql_vuln_enable_anonymous: true
+
+# Allow MySQL to listen on all interfaces (0.0.0.0)
+mysql_vuln_bind_all: true
+
+# Make foundation_db world-readable
+mysql_vuln_world_readable_db: true
+
+# Enable local_infile (SQLi → file read)
+mysql_vuln_enable_local_infile: true
+
+# Enable general query log (credential leakage)
+mysql_vuln_enable_general_log: true
+
+# Make MySQL error log world-readable
+mysql_vuln_world_readable_error_log: true
+
+# Deploy insecure MariaDB config template
+mysql_vuln_insecure_config: true
+
+# Enable remote MySQL root login (real root account)
+mysql_vuln_remote_root_login: true
+
+# Make MySQL root password blank (real root account)
+mysql_vuln_blank_root_password: true
