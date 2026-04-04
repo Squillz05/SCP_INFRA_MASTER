@@ -18,10 +18,6 @@ mysql_data_dir: /var/lib/mysql
 # Database Info
 mysql_database: "foundation_db"
 
-# Root Account (Grey Team Only)
-mysql_root_user: "root"
-mysql_root_pass: "NoR00tF0rY0u!!!78"
-
 # Apache → MySQL Service Account (Grey Team)
 mysql_app_user: "SQL_APACHE_GREYTEAM"
 mysql_app_pass: "SQ1APACH3User#0544!"
@@ -29,6 +25,10 @@ mysql_app_pass: "SQ1APACH3User#0544!"
 # Scoring Engine → MySQL Service Account (Grey Team)
 mysql_scorer_user: "SCORER_GREYTEAM"
 mysql_scorer_pass: "Th3ScoreUser@9034!"
+
+# Blue Team → MySQL Admin-Level Account
+mysql_blue_user: "DR_ADMIN"
+mysql_blue_pass: "Blu3TeamDB!20265"
 
 # Debian 13 Packages
 mysql_packages:
@@ -41,7 +41,6 @@ mysql_firewall_port: 3306
 mysql_firewall_zone: public
 
 # OS Users (from Grey Team Packet)
-# These will be created by linux/common role
 linux_users:
   - username: "cyberrange"
     password: "Cyberrange123!"
