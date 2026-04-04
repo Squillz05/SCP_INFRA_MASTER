@@ -18,6 +18,10 @@ mysql_data_dir: /var/lib/mysql
 # Database Info
 mysql_database: "foundation_db"
 
+# Grey Team Local Admin (Root-Equivalent)
+mysql_grey_admin_user: "GREY_ADMIN"
+mysql_grey_admin_pass: "Gr3yTeamDB!Admin#2026"
+
 # Apache → MySQL Service Account (Grey Team)
 mysql_app_user: "SQL_APACHE_GREYTEAM"
 mysql_app_pass: "SQ1APACH3User#0544!"
