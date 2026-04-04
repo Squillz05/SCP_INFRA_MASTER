@@ -2,7 +2,7 @@
     Wazuh Agent Configuration
     Managed by Ansible — do not edit manually.
     Role: linux/wazuh-agent
-    Manager: {{ wazuh_manager_ip }}
+    Manager: {{ linux_wazuh_manager_ip }}
 -->
 <ossec_config>
 
@@ -11,9 +11,9 @@
   ===================================================== -->
   <client>
     <server>
-      <address>{{ wazuh_manager_ip }}</address>
-      <port>{{ wazuh_manager_port }}</port>
-      <protocol>{{ wazuh_manager_protocol }}</protocol>
+      <address>{{ linux_wazuh_manager_ip }}</address>
+      <port>{{ linux_wazuh_manager_port }}</port>
+      <protocol>{{ linux_wazuh_manager_protocol }}</protocol>
     </server>
     <config-profile>ubuntu, ubuntu20, ubuntu22</config-profile>
     <notify_time>10</notify_time>
@@ -24,9 +24,9 @@
     <!-- Auto-enrollment: agent registers itself with the manager -->
     <enrollment>
       <enabled>yes</enabled>
-      <manager_address>{{ wazuh_manager_ip }}</manager_address>
-      <port>{{ wazuh_enrollment_port }}</port>
-      <agent_name>{{ wazuh_agent_name }}</agent_name>
+      <manager_address>{{ linux_wazuh_manager_ip }}</manager_address>
+      <port>{{ linux_wazuh_enrollment_port }}</port>
+      <agent_name>{{ linux_wazuh_agent_name }}</agent_name>
       <auto_method>yes</auto_method>
       <delay_after_enrollment>20</delay_after_enrollment>
       <use_source_ip>no</use_source_ip>
@@ -47,11 +47,11 @@
   ===================================================== -->
   <syscheck>
     <disabled>no</disabled>
-    <frequency>{{ wazuh_agent_fim_frequency }}</frequency>
+    <frequency>{{ linux_wazuh_agent_fim_frequency }}</frequency>
     <scan_on_start>yes</scan_on_start>
     <alert_new_files>yes</alert_new_files>
 
-{% for dir in wazuh_agent_fim_dirs %}
+{% for dir in linux_wazuh_agent_fim_dirs %}
     <directories check_all="yes" report_changes="yes" realtime="yes">{{ dir }}</directories>
 {% endfor %}
 

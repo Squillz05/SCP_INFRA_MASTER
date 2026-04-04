@@ -25,7 +25,7 @@
 - name: Check if Wazuh manager is already installed
   ansible.builtin.stat:
     path: /etc/wazuh-manager/ossec.conf
-  register: wazuh_already_installed
+  register: unscored_wazuh_already_installed
 
 # 2. Install prerequisites
 - name: Install prerequisites
@@ -40,26 +40,26 @@
 # 3. Run Wazuh all-in-one install script (idempotent via stat check)
 - name: Download Wazuh install script
   ansible.builtin.get_url:
-    url: "https://packages.wazuh.com/{{ wazuh_version }}/wazuh-install.sh"
+    url: "https://packages.wazuh.com/{{ unscored_wazuh_version }}/wazuh-install.sh"
     dest: /tmp/wazuh-install.sh
     mode: '0755'
     force: false
-  when: not wazuh_already_installed.stat.exists
+  when: not unscored_wazuh_already_installed.stat.exists
 
 - name: Run Wazuh all-in-one installation (this takes ~10 minutes)
   ansible.builtin.command:
     cmd: bash /tmp/wazuh-install.sh --all-in-one --ignore-check
-  when: not wazuh_already_installed.stat.exists
+  when: not unscored_wazuh_already_installed.stat.exists
   async: 900
   poll: 30
-  register: wazuh_install_result
+  register: unscored_wazuh_install_result
 
 - name: Display install output
   ansible.builtin.debug:
-    var: wazuh_install_result.stdout_lines
+    var: unscored_wazuh_install_result.stdout_lines
   when:
-    - not wazuh_already_installed.stat.exists
-    - wazuh_install_result is defined
+    - not unscored_wazuh_already_installed.stat.exists
+    - unscored_wazuh_install_result is defined
 
 # ----------------------------------------------------------
 # 4. Retrieve generated admin credentials
@@ -68,21 +68,21 @@
   ansible.builtin.find:
     paths: /root
     patterns: "wazuh-install-files.tar"
-  register: creds_tar
+  register: unscored_creds_tar
 
 - name: Extract Wazuh passwords file
   ansible.builtin.command:
-    cmd: "tar -O -xf {{ creds_tar.files[0].path }} wazuh-install-files/wazuh-passwords.txt"
-  register: wazuh_passwords
+    cmd: "tar -O -xf {{ unscored_creds_tar.files[0].path }} wazuh-install-files/wazuh-passwords.txt"
+  register: unscored_wazuh_passwords
   changed_when: false
-  when: creds_tar.matched > 0
+  when: unscored_creds_tar.matched > 0
 
 - name: Display Wazuh credentials (save these!)
   ansible.builtin.debug:
-    msg: "{{ wazuh_passwords.stdout_lines }}"
+    msg: "{{ unscored_wazuh_passwords.stdout_lines }}"
   when:
-    - wazuh_passwords is defined
-    - wazuh_passwords.stdout is defined
+    - unscored_wazuh_passwords is defined
+    - unscored_wazuh_passwords.stdout is defined
 
 # ----------------------------------------------------------
 # 5. Deploy custom manager ossec.conf
@@ -170,7 +170,7 @@
 - name: Verify wazuh-manager service is active
   ansible.builtin.command:
     cmd: /var/ossec/bin/wazuh-control status
-  register: wazuh_status
+  register: unscored_wazuh_status
   changed_when: false
 
 - name: Display Wazuh deployment summary
@@ -179,11 +179,11 @@
       - "============================================================"
       - "Wazuh all-in-one deployed successfully on {{ inventory_hostname }}"
       - "============================================================"
-      - "Dashboard : https://{{ wazuh_manager_ip }}:{{ wazuh_dashboard_port }}"
-      - "API       : https://{{ wazuh_manager_ip }}:55000"
-      - "Manager   : {{ wazuh_manager_ip }}:{{ wazuh_manager_port }} (agents)"
-      - "Enrollment: {{ wazuh_manager_ip }}:{{ wazuh_enrollment_port }} (auto-enroll)"
+      - "Dashboard : https://{{ unscored_wazuh_manager_ip }}:{{ unscored_wazuh_dashboard_port }}"
+      - "API       : https://{{ unscored_wazuh_manager_ip }}:55000"
+      - "Manager   : {{ unscored_wazuh_manager_ip }}:{{ unscored_wazuh_manager_port }} (agents)"
+      - "Enrollment: {{ unscored_wazuh_manager_ip }}:{{ wazuh_enrollment_port }} (auto-enroll)"
       - "------------------------------------------------------------"
-      - "Agent config — point agents at: {{ wazuh_manager_ip }}"
+      - "Agent config — point agents at: {{ unscored_wazuh_manager_ip }}"
       - "See credentials in: /root/wazuh-install-files.tar"
       - "============================================================"

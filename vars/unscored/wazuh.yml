@@ -27,10 +27,15 @@ wazuh_email_notification: "no"
 wazuh_alert_log_level: 3
 
 # ----------------------------------------------------------
-# File Integrity Monitoring — Linux agents
-# Competition service paths that should never change
+# Linux agent overrides (linux_ prefix required by role)
 # ----------------------------------------------------------
-wazuh_agent_fim_dirs:
+linux_wazuh_version: "{{ wazuh_version }}"
+linux_wazuh_manager_ip: "{{ wazuh_manager_ip }}"
+linux_wazuh_manager_port: "{{ wazuh_manager_port }}"
+linux_wazuh_manager_protocol: "{{ wazuh_manager_protocol }}"
+linux_wazuh_enrollment_port: "{{ wazuh_enrollment_port }}"
+
+linux_wazuh_agent_fim_dirs:
   - /etc
   - /usr/bin
   - /usr/sbin
@@ -38,7 +43,7 @@ wazuh_agent_fim_dirs:
   - /root
   - /opt
 
-wazuh_agent_fim_frequency: 300
+linux_wazuh_agent_fim_frequency: 300
 
 # ----------------------------------------------------------
 # File Integrity Monitoring — Manager (scp-wazuh-01)

@@ -47,7 +47,7 @@
 - name: "[dnf] Add Wazuh repository"
   ansible.builtin.yum_repository:
     name: wazuh
-    description: "Wazuh {{ wazuh_version }} repository"
+    description: "Wazuh {{ linux_wazuh_version }} repository"
     baseurl: https://packages.wazuh.com/4.x/yum/
     gpgcheck: true
     gpgkey: https://packages.wazuh.com/key/GPG-KEY-WAZUH
@@ -64,7 +64,7 @@
     state: present
     update_cache: true
   environment:
-    WAZUH_MANAGER: "{{ wazuh_manager_ip }}"
+    WAZUH_MANAGER: "{{ linux_wazuh_manager_ip }}"
   when: ansible_os_family == "Debian"
 
 - name: "[dnf] Install wazuh-agent"
@@ -72,7 +72,7 @@
     name: wazuh-agent
     state: present
   environment:
-    WAZUH_MANAGER: "{{ wazuh_manager_ip }}"
+    WAZUH_MANAGER: "{{ linux_wazuh_manager_ip }}"
   when: ansible_os_family == "RedHat"
 
 # ----------------------------------------------------------
@@ -113,5 +113,5 @@
   ansible.builtin.debug:
     msg:
       - "Wazuh agent installed on {{ inventory_hostname }} ({{ ansible_host }})"
-      - "Manager: {{ wazuh_manager_ip }}:{{ wazuh_manager_port }}"
+      - "Manager: {{ linux_wazuh_manager_ip }}:{{ linux_wazuh_manager_port }}"
       - "{{ agent_status.stdout_lines | join(' | ') }}"
