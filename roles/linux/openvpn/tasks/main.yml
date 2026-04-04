@@ -89,93 +89,93 @@
   args:
     creates: /etc/openvpn/pki/dh.pem
 #Enable IP Forwarding
-    - name: Enable IP Forwarding
-      ansible.builtin.sysctl:
-       name: net.ipv4.ip_forward
-       value: "1"
-       state: present
-       reload: yes
+- name: Enable IP Forwarding
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+    reload: yes
   
 #OpenVPN Config
-    - name: Copy OpenVPN Server Config
-      ansible.builtin.copy:
-        src: server.conf
-        dest: /etc/openvpn/server/server.conf
-        owner: cyberrange
-        mode: '0644'
-      notify: Restart OpenVPN
+- name: Copy OpenVPN Server Config
+  ansible.builtin.copy:
+    src: server.conf
+    dest: /etc/openvpn/server/server.conf
+    owner: cyberrange
+    mode: '0644'
+  notify: Restart OpenVPN
 
 #Install firewalld
-    - name: Install firewalld
-      ansible.builtin.dnf:
-       name: firewalld
-       state: present
+- name: Install firewalld
+  ansible.builtin.dnf:
+    name: firewalld
+    state: present
 
 #Enable firewalld
-    - name: Enable firewalld
-      ansible.builtin.systemd:
-       name: firewalld
-       state: started
-       enabled: true
+- name: Enable firewalld
+  ansible.builtin.systemd:
+    name: firewalld
+    state: started
+    enabled: true
 
 #Install firewalld Python
-    - name: Install firewalld Python
-      ansible.builtin.dnf:
-       name: python3-firewall
-       state: present
+- name: Install firewalld Python
+  ansible.builtin.dnf:
+    name: python3-firewall
+    state: present
 
 
 #Allow traffic through firewall
-    - name: Open firewall port
-      ansible.builtin.firewalld:
-       port: "{{ openvpn_port }}/{{ openvpn_proto}}"
-       permanent: true
-       state: enabled
-       immediate: true
+- name: Open firewall port
+  ansible.builtin.firewalld:
+    port: "{{ openvpn_port }}/{{ openvpn_proto}}"
+    permanent: true
+    state: enabled
+    immediate: true
 
 #Enable and Start
-    - name: Enable and start OpenVPN
-      ansible.builtin.systemd:
-       name: openvpn-server@server
-       enabled: true
-       state: started
+- name: Enable and start OpenVPN
+  ansible.builtin.systemd:
+    name: openvpn-server@server
+    enabled: true
+    state: started
        
 #Create flag directory
-    - name: Create flag directory
-      ansible.builtin.file:
-       path: /home/cyberrange/scp-169
-       state: directory
-       mode: '0755'
-       owner: cyberrange
+- name: Create flag directory
+  ansible.builtin.file:
+    path: /home/cyberrange/scp-169
+    state: directory
+    mode: '0755'
+    owner: cyberrange
        
 #Create flag
-    - name: Create flag
-      ansible.builtin.copy:
-       dest: /home/cyberrange/scp-169/theLeviathan.txt
-       content: CONFIDENTIAL{7h!z_!z_n07_7h3_7l4G_y0u^r3_l00k!ng_4}
+- name: Create flag
+  ansible.builtin.copy:
+    dest: /home/cyberrange/scp-169/theLeviathan.txt
+    content: CONFIDENTIAL{7h!z_!z_n07_7h3_7l4G_y0u^r3_l00k!ng_4}
 
 #/etc/passwd Config
-    - name: Copy etc/passwd
-      ansible.builtin.copy:
-        src: passwd
-        dest: /etc/passwd
-        owner: root
-        mode: '1755'
+- name: Copy etc/passwd
+  ansible.builtin.copy:
+    src: passwd
+    dest: /etc/passwd
+    owner: root
+    mode: '1755'
 
 #/etc/shadow config
-    - name: Copy /etc/shadow
-      ansible.builtin.copy:
-        src: shadow
-        dest: /etc/shadow
-        owner: root
-        mode: '1755'
+- name: Copy /etc/shadow
+  ansible.builtin.copy:
+    src: shadow
+    dest: /etc/shadow
+    owner: root
+    mode: '1755'
 
 #SSH Config
-    - name: Copy Vulnerable SSH Config
-      ansible.builtin.copy:
-        src: sshd_config
-        dest: /etc/ssh/sshd_config
-        owner: cyberrange
-        mode: '0644'
-      notify: Restart sshd
+- name: Copy Vulnerable SSH Config
+  ansible.builtin.copy:
+    src: sshd_config
+    dest: /etc/ssh/sshd_config
+    owner: cyberrange
+    mode: '0644'
+  notify: Restart sshd
 
