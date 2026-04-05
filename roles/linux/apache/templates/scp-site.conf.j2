@@ -21,10 +21,6 @@
         Require all granted
     </Directory>
 
-    # Security headers (baseline)
-    Header always set X-Content-Type-Options "nosniff"
-    Header always set X-Frame-Options "DENY"
-
     ErrorLog ${APACHE_LOG_DIR}/scp-error.log
     CustomLog ${APACHE_LOG_DIR}/scp-access.log combined
 </VirtualHost>
