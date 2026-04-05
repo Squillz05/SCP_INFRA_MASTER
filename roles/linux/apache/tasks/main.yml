@@ -139,7 +139,7 @@
   ansible.builtin.wait_for:
     host: "127.0.0.1"
     port: "{{ apache_http_port }}"
-    timeout: 30
+    timeout: 60
 
 - name: Verify scoring keyword present in homepage
   ansible.builtin.uri:
