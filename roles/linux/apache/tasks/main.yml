@@ -101,7 +101,7 @@
 - name: Deploy secure baseline PHP config
   ansible.builtin.template:
     src: php_secure.ini.j2
-    dest: /etc/php/8.2/apache2/conf.d/99-scp-secure.ini
+    dest: /etc/php/8.4/apache2/conf.d/99-scp-secure.ini
     owner: root
     group: root
     mode: '0644'
