@@ -12,32 +12,13 @@
 # - Creates Users
 # ==============================================================================
 
-- name: Install Base Packages (APT)
-  ansible.builtin.apt:
-    name: "{{ item }}"
-    state: present
-  become: true
-  loop: "{{ apt_packages }}"
-  when: ansible_os_family == "Debian"
-
 - name: Install Base Packages (DNF)
   ansible.builtin.dnf:
     name: "{{ item }}"
     state: present
   become: true
   loop: "{{ dnf_packages }}"
-  when: ansible_os_family == "RedHat"  
-
-- name: Set Hostname
-  ansible.builtin.hostname:
-    name: "{{ inventory_hostname }}.{{ domain }}"
-  become: true
-
-- name: Set /etc/hosts
-  ansible.builtin.template:
-    src: ./templates/hosts.j2
-    dest: /etc/hosts
-  become: true
+  when: ansible_os_family == "RedHat"
 
 - name: Set DNS Server
   community.general.nmcli:
@@ -54,10 +35,8 @@
   ansible.builtin.user:
     user: "{{ item.username }}"
     password: "{{ item.password | password_hash('sha512') }}"
-    groups: "{{ [privileged_group] if item.privileged else [] }}"
+    groups: "{{ ['wheel'] if item.privileged else [] }}"
     append: yes
     state: present
   become: true
-  vars:
-    privileged_group: "{{ 'sudo' if ansible_os_family == 'Debian' else 'wheel' }}"
   loop: "{{ users }}"

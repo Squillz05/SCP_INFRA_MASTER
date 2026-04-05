@@ -1,4 +1,18 @@
 ---
+
+# Set Hostname
+- name: Set Hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}.{{ domain }}"
+  become: true
+
+# Set /etc/hosts
+- name: Set /etc/hosts
+  ansible.builtin.template:
+    src: ./templates/hosts.j2
+    dest: /etc/hosts
+  become: true
+
 # Main dispatcher for OS-specific tasks
 
 - name: Load Debian tasks

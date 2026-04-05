@@ -2,7 +2,7 @@
 # Debian-only Linux Common Role
 
 # Install Base Packages
-- name: Install Base Packages (APT)
+- name: Install Base Packages
   ansible.builtin.apt:
     name: "{{ item }}"
     state: present
@@ -10,27 +10,14 @@
   become: true
   loop: "{{ apt_packages }}"
 
-# Set Hostname
-- name: Set Hostname
-  ansible.builtin.hostname:
-    name: "{{ inventory_hostname }}.{{ domain }}"
-  become: true
-
-# Set /etc/hosts
-- name: Set /etc/hosts
-  ansible.builtin.template:
-    src: ./templates/hosts.j2
-    dest: /etc/hosts
-  become: true
-
 # Set DNS (Debian fallback — writes resolv.conf directly)
-- name: Set DNS Server (Debian)
+- name: Set DNS Server
   ansible.builtin.copy:
     dest: /etc/resolv.conf
     content: |
       nameserver {{ dns }}
   become: true
-  ignore_errors: yes
+  ignore_errors: true
 
 # Add Users
 - name: Add Users

@@ -1,4 +1,16 @@
 ---
+# ==============================================================================
+# Author: Nathan Russell
+# Date Created: 04/03/2026
+#
+# Role for Vulnerability Installation on OpenSSH
+# Actions:
+# - Create Persistence Script for Dr. Bright
+# - Create Dr. Bright Ban Note
+# - Weaken SSH Config
+# - Make /etc/ssh ACL permissive
+# - Install backdoor (pending)
+# ==============================================================================
 
 - name: Create User Persistence Script
   ansible.builtin.template:
@@ -25,10 +37,7 @@
     mode: "0644"
     attributes: "+i"
   become: true
-
-- name: Restart Systemd Daemon
-  ansible.builtin.shell: "systemctl daemon-reload"
-  become: true
+  notify: Restart Systemd Daemon
 
 - name: Soften SSH Server
   ansible.builtin.template:
