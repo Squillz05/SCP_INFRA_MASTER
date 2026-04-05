@@ -10,8 +10,8 @@
   hosts: domain_controllers
   gather_facts: yes
   vars_files:
-    - ../vars/ad-config.yml
-    - ../vars/vuln-ad-config.yml
+    - ../../vars/windows/dc.yml
+    - ../../vars/windows/vuln/dc.yml
 
   tasks:
     - name: Display warning

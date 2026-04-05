@@ -23,7 +23,7 @@
   hosts: domain_controllers
   gather_facts: yes
   vars_files:
-    - ../vars/ad-config.yml
+    - ../../vars/windows/dc.yml
 
   tasks:
     - name: Set timezone to UTC
@@ -40,8 +40,8 @@
       when: hostname_change.reboot_required
 
   roles:
-    - dc
-    - ad-users
+    - /windows/dc
+    - /windows/ad-users
 
   post_tasks:
     - name: Display completion message

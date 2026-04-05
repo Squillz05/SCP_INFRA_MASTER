@@ -10,8 +10,8 @@
   hosts: smtp_servers
   gather_facts: yes
   vars_files:
-    - ../vars/smtp-config.yml
-    - ../vars/vuln-smtp-config.yml
+    - ../../vars/windows/smtp.yml
+    - ../../vars/windows/vuln/smtp.yml
 
   tasks:
     - name: Display warning

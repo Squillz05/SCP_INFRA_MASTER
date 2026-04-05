@@ -17,8 +17,8 @@
   hosts: smtp_servers
   gather_facts: yes
   vars_files:
-    - ../vars/ad-config.yml
-    - ../vars/smtp-config.yml
+    - ../../vars/windows/dc.yml
+    - ../../vars/windows/smtp.yml
 
   pre_tasks:
     - name: Set timezone to UTC
@@ -36,7 +36,7 @@
       when: hostname_change.reboot_required
 
   roles:
-    - smtp
+    - /windows/smtp
 
   post_tasks:
     - name: Verify SMTPSVC service status

@@ -10,8 +10,8 @@
   hosts: smb_servers
   gather_facts: yes
   vars_files:
-    - ../vars/smb-config.yml
-    - ../vars/vuln-smb-config.yml
+    - ../../vars/windows/smb.yml
+    - ../../vars/windows/vuln/smb.yml
 
   tasks:
     - name: Display warning

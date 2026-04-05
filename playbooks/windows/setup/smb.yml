@@ -15,8 +15,8 @@
   hosts: smb_servers
   gather_facts: yes
   vars_files:
-    - ../vars/ad-config.yml
-    - ../vars/smb-config.yml
+    - ../../vars/windows/dc.yml
+    - ../../vars/windows/smb.yml
 
   pre_tasks:
     - name: Set timezone to UTC
@@ -34,7 +34,7 @@
       when: hostname_change.reboot_required
 
   roles:
-    - smb
+    - /windows/smb
 
   post_tasks:
     - name: List configured shares
