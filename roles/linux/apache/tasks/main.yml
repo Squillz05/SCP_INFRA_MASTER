@@ -1,0 +1,163 @@
+---
+# ==============================================================================
+# Author: Seonho Park
+# Date Created: 04/03/2026
+#
+# Role for Apache Web Server on SCP-APACHE-01 (Debian 13)
+# Actions:
+# - Install Apache2, PHP, and required modules
+# - Deploy SCP Foundation homepage (scoring keyword embedded)
+# - Create upload directory (locked down in baseline)
+# - Configure database connection file
+# - Enable UFW and allow HTTP traffic
+# - Enable and start Apache
+# ==============================================================================
+
+- name: Install Apache and PHP packages
+  ansible.builtin.apt:
+    name: "{{ apache_packages }}"
+    state: present
+    update_cache: true
+  become: true
+
+- name: Remove default Apache index.html
+  ansible.builtin.file:
+    path: "{{ apache_web_root }}/index.html"
+    state: absent
+  become: true
+
+- name: Deploy SCP Foundation homepage (index.php)
+  ansible.builtin.template:
+    src: index.php.j2
+    dest: "{{ apache_web_root }}/index.php"
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  become: true
+
+- name: Deploy database connection file
+  ansible.builtin.template:
+    src: db_config.php.j2
+    dest: "{{ apache_web_root }}/db_config.php"
+    owner: www-data
+    group: www-data
+    mode: '0640'
+  become: true
+
+- name: Create uploads directory
+  ansible.builtin.file:
+    path: "{{ apache_upload_dir }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0750'    # baseline: NOT world-writable (vulns.yml loosens this)
+  become: true
+
+- name: Deploy restrictive .htaccess on uploads directory
+  ansible.builtin.copy:
+    dest: "{{ apache_upload_dir }}/.htaccess"
+    content: |
+      # Baseline: deny execution of scripts in uploads directory
+      Options -ExecCGI
+      AddHandler cgi-script .php .php3 .php4 .php5 .phtml .pl .py .jsp .asp .sh .cgi
+      deny from all
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  become: true
+
+# ── 7. Deploy secure Apache vhost config ──────────────────────────────────────
+- name: Deploy Apache vhost configuration
+  ansible.builtin.template:
+    src: scp-site.conf.j2
+    dest: /etc/apache2/sites-available/scp-site.conf
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  notify: Restart Apache
+
+# ── 8. Disable default site, enable SCP site ─────────────────────────────────
+- name: Disable default Apache site
+  ansible.builtin.command: a2dissite 000-default.conf
+  become: true
+  changed_when: true
+  notify: Restart Apache
+
+- name: Enable SCP site
+  ansible.builtin.command: a2ensite scp-site.conf
+  become: true
+  changed_when: true
+  notify: Restart Apache
+
+# ── 9. Enable required Apache modules ─────────────────────────────────────────
+- name: Enable Apache modules
+  community.general.apache2_module:
+    name: "{{ item }}"
+    state: present
+  become: true
+  loop:
+    - rewrite
+    - headers
+  notify: Restart Apache
+
+# ── 10. Secure baseline PHP config ────────────────────────────────────────────
+- name: Deploy secure baseline PHP config
+  ansible.builtin.template:
+    src: php_secure.ini.j2
+    dest: /etc/php/8.2/apache2/conf.d/99-scp-secure.ini
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  notify: Restart Apache
+
+# ── 11. Configure UFW: allow HTTP ─────────────────────────────────────────────
+- name: Allow HTTP through UFW
+  ansible.builtin.ufw:
+    rule: allow
+    port: "{{ apache_http_port }}"
+    proto: tcp
+  become: true
+
+- name: Allow SSH through UFW
+  ansible.builtin.ufw:
+    rule: allow
+    port: 22
+    proto: tcp
+  become: true
+
+- name: Enable UFW
+  ansible.builtin.ufw:
+    state: enabled
+    policy: deny
+  become: true
+
+# ── 12. Enable and start Apache ───────────────────────────────────────────────
+- name: Enable and start Apache2
+  ansible.builtin.systemd:
+    name: apache2
+    state: started
+    enabled: true
+  become: true
+
+# ── 13. Verify Apache is listening ────────────────────────────────────────────
+- name: Verify Apache responds on port 80
+  ansible.builtin.wait_for:
+    host: "127.0.0.1"
+    port: "{{ apache_http_port }}"
+    timeout: 30
+
+- name: Verify scoring keyword present in homepage
+  ansible.builtin.uri:
+    url: "http://127.0.0.1/"
+    return_content: true
+    status_code: 200
+  register: homepage_check
+
+- name: Assert scoring keyword is in body
+  ansible.builtin.assert:
+    that:
+      - "'{{ apache_scoring_keyword }}' in homepage_check.content"
+    fail_msg: "Scoring keyword '{{ apache_scoring_keyword }}' NOT found in Apache homepage! Scoring will fail."
+    success_msg: "Apache scoring keyword confirmed present."

@@ -1,0 +1,22 @@
+; SCP Foundation PHP Configuration — Baseline (Secure)
+; Applied by setup playbook. Overwritten by vulns playbook.
+
+; Disable dangerous functions
+disable_functions = exec,passthru,shell_exec,system,proc_open,popen,curl_exec,curl_multi_exec,parse_ini_file,show_source
+
+; Disable Remote File Inclusion
+allow_url_include = Off
+allow_url_fopen = Off
+
+; Hide PHP version
+expose_php = Off
+
+; Disable error display (log only)
+display_errors = Off
+display_startup_errors = Off
+log_errors = On
+
+; Session hardening
+session.use_strict_mode = On
+session.cookie_httponly = On
+session.cookie_secure = Off

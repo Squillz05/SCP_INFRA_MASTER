@@ -1,0 +1,30 @@
+# SCP Foundation — Site Golisano Web Portal
+# Apache VirtualHost configuration
+# Baseline: hardened. Vulns playbook loosens this.
+
+<VirtualHost *:{{ apache_http_port }}>
+    ServerName scp-apache-01.scp.com
+    ServerAdmin webmaster@scp.com
+    DocumentRoot {{ apache_web_root }}
+
+    # Baseline: directory listing OFF, symlinks NOT followed
+    <Directory {{ apache_web_root }}>
+        Options -Indexes -FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # Uploads directory: execution denied in baseline
+    <Directory {{ apache_upload_dir }}>
+        Options -Indexes -ExecCGI
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # Security headers (baseline)
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+
+    ErrorLog ${APACHE_LOG_DIR}/scp-error.log
+    CustomLog ${APACHE_LOG_DIR}/scp-access.log combined
+</VirtualHost>
