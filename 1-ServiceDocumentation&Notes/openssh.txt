@@ -3,35 +3,58 @@ Service Name: openssh
 ========================================
 
 Purpose:
-Allows secure remote access to a device with flexible authentication options.
+
+By default, SSH allows secure remote access to a device with flexible authentication options. This SSH service is meant to simulate a server already compromised by insider threats. 
 
 
 Default Users / Credentials:
 
+cyberrange:Cyberrange123!
+grayteam:DONOTTOUCH!!!@123$
+scp073:abel_is_dead
+scp343:4ll-p0w3rfuL
+ntf:s3cuRe-c0n+a1n-Pr0tecT
+drbright:password
 
 
 Flags: 
-1.
-2.
-3.
 
+1. /usr/lib/systemd/system/sshd.service.d/flag.conf (SCP{1n53cur3_5h3ll_d43m0n})
+2. /usr/lib/systemd/system-generators/systemd-network-generator (SCP{b4n5_c4n7_570p_m3})
 
 
 Ports / Protocols:
 
+SSH - Port 22
 
 
 Deployment Notes:
 
+Base Image - rockylinux-10-server
+Must change cyberrange password and add user to wheel, then restart.
+Playbooks at playbooks/linux/*/openssh.yml
 
 
 Vulnerability Notes:
 
-
+1. The user Dr. Bright has a persistence method active on his root privileged user and the account is insecure and could be easily compromised by red team if they can determine the password. 
+2. SSH Configuration has been softened up
+3. Overly permissive ACL on /etc/ssh (except private keys)
+4. Backdoor when logging in as scp076 (WIP)
 
 Reset Notes:
 
+Reset operation is currently to rerun setup and flags. Complete reset in progress.
 
 
 Troubleshooting:
 
+Check the status of the following services, they have overrides applied that could break the service if malformed
+1. sshd.service
+2. systemd-tmpfiles-clean.timer
+3. systemd-tmpfiles-clean.service
+4. logrotate-check.service
+
+Review /etc/ssh ACL for accidental overpermissive private key ACLs that stop SSHd
+
+All other troubleshooting tips are related to the linux/common or linux/wazuh-agent roles and are not OpenSSH server specific
