@@ -60,7 +60,7 @@
 
 - name: Deploy insecure PHP config
   ansible.builtin.copy:
-    dest: /etc/php/8.2/apache2/conf.d/99-scp-secure.ini
+    dest: /etc/php/8.4/apache2/conf.d/99-scp-secure.ini
     content: |
       ; SCP Foundation PHP Configuration
 
