@@ -57,4 +57,4 @@ Check the status of the following services, they have overrides applied that cou
 
 Review /etc/ssh ACL for accidental overpermissive private key ACLs that stop SSHd
 
-All other troubleshooting tips are related to the linux/common role and are not OpenSSH server specific
+All other troubleshooting tips are related to the linux/common or linux/wazuh-agent roles and are not OpenSSH server specific
