@@ -22,10 +22,10 @@ users:
     password: "DONOTTOUCH!!!@123$"
     privileged: true
   - username: "scp073"
-    password: "test1"
+    password: "abel_is_dead"
     privileged: false
   - username: "scp343"
-    password: "test2"
+    password: "4ll-p0w3rfuL"
     privileged: true
   - username: "ntf"
     password: "s3cuRe-c0n+a1n-Pr0tecT"
