@@ -1,4 +1,5 @@
 ---
+
 hostname: "scp-apache-01"
 
 apache_ip: "10.10.10.101"
@@ -25,7 +26,6 @@ apache_db_pass: "SQ1APACH3User#0544!"
 
 apache_upload_dir: /var/www/html/uploads
 
-# ── Flags ─────────────────────────────────────────────────────
 # Easy flag: web-accessible if directory listing is enabled
 apache_flag_easy_path: /var/www/html/uploads/.scp_containment.txt
 apache_flag_easy_value: "CONFIDENTIAL{4p4ch3_br34ch_5CP_W3B_c0mpr0m1s3d}"
@@ -34,7 +34,6 @@ apache_flag_easy_value: "CONFIDENTIAL{4p4ch3_br34ch_5CP_W3B_c0mpr0m1s3d}"
 apache_flag_hard_path: /etc/apache2/.scp_classified
 apache_flag_hard_value: "CONFIDENTIAL{h1dd3n_1n_c0nf1g_SCP_076_c0nt41n3d}"
 
-# ── Vulnerability toggles ─────────────────────────────────────
 apache_vuln_directory_listing: true
 apache_vuln_server_tokens_full: true
 apache_vuln_phpinfo_exposed: true
@@ -42,7 +41,6 @@ apache_vuln_upload_writable: true
 apache_vuln_php_dangerous_functions: true
 apache_vuln_php_allow_url_include: true
 
-# ── Ansible connection ────────────────────────────────────────
 ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
 ansible_user: cyberrange
 ansible_password: Cyberrange123!

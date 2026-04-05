@@ -1,0 +1,113 @@
+---
+
+- name: Remove restrictive .htaccess from uploads to enable directory listing
+  ansible.builtin.file:
+    path: "{{ apache_upload_dir }}/.htaccess"
+    state: absent
+  become: true
+  when: apache_vuln_directory_listing
+
+- name: Enable directory listing in Apache config for uploads
+  ansible.builtin.lineinfile:
+    path: /etc/apache2/sites-available/scp-site.conf
+    regexp: 'Options -Indexes'
+    line: '    Options +Indexes +FollowSymLinks'
+  become: true
+  when: apache_vuln_directory_listing
+  notify: Restart Apache
+
+- name: Set ServerTokens to Full
+  ansible.builtin.lineinfile:
+    path: /etc/apache2/conf-available/security.conf
+    regexp: '^ServerTokens'
+    line: 'ServerTokens Full'
+    create: true
+  become: true
+  when: apache_vuln_server_tokens_full
+  notify: Restart Apache
+
+- name: Set ServerSignature to On
+  ansible.builtin.lineinfile:
+    path: /etc/apache2/conf-available/security.conf
+    regexp: '^ServerSignature'
+    line: 'ServerSignature On'
+  become: true
+  when: apache_vuln_server_tokens_full
+  notify: Restart Apache
+
+- name: Deploy phpinfo page at /info.php
+  ansible.builtin.copy:
+    dest: "{{ apache_web_root }}/info.php"
+    content: |
+      <?php
+      // SCP Foundation Internal Diagnostics
+      // CLEARANCE LEVEL 3 REQUIRED
+      phpinfo();
+      ?>
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  become: true
+  when: apache_vuln_phpinfo_exposed
+
+- name: Make uploads directory a potential webshell upload vector
+  ansible.builtin.file:
+    path: "{{ apache_upload_dir }}"
+    mode: '0777'
+    state: directory
+  become: true
+  when: apache_vuln_upload_writable
+
+- name: Deploy insecure PHP config
+  ansible.builtin.copy:
+    dest: /etc/php/8.2/apache2/conf.d/99-scp-secure.ini
+    content: |
+      ; SCP Foundation PHP Configuration
+
+      ; Dangerous functions enabled (should be disabled in production)
+      disable_functions =
+
+      ; Remote File Inclusion enabled
+      allow_url_include = On
+      allow_url_fopen = On
+
+      ; Error display enabled (leaks info)
+      display_errors = On
+      display_startup_errors = On
+      error_reporting = E_ALL
+
+      ; Other risky settings
+      expose_php = On
+      session.use_strict_mode = Off
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  when: apache_vuln_php_dangerous_functions or apache_vuln_php_allow_url_include
+  notify: Restart Apache
+
+- name: Drop fake credentials file in uploads for Red Team
+  ansible.builtin.copy:
+    dest: "{{ apache_upload_dir }}/site_backup_notes.txt"
+    content: |
+      SCP Foundation Web Portal - Deployment Notes
+      Last updated: 2026-01-15
+      Author: sysadmin@scp.com
+
+      DB credentials (OLD - supposedly rotated):
+        Host: 10.10.10.102
+        User: webadmin
+        Pass: Foundat10n#old
+      
+      Note: New credentials are in db_config.php
+      DO NOT SHARE THIS FILE
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  become: true
+
+- name: Reload Apache after vuln configuration
+  ansible.builtin.systemd:
+    name: apache2
+    state: reloaded
+  become: true

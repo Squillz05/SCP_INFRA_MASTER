@@ -1,0 +1,8 @@
+---
+
+apache_vuln_directory_listing: true      # Options +Indexes on upload dir
+apache_vuln_server_tokens_full: true     # Leaks Apache + PHP version
+apache_vuln_phpinfo_exposed: true        # phpinfo() at /info.php
+apache_vuln_upload_writable: true        # 777 perms on uploads dir (webshell)
+apache_vuln_php_dangerous_functions: true  # exec, system, passthru enabled
+apache_vuln_php_allow_url_include: true  # RFI attacks enabled

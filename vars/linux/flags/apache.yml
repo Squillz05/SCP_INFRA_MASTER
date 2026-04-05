@@ -1,0 +1,15 @@
+apache_flags:
+  - name: easy_flag
+    path: "{{ apache_flag_easy_path }}"
+    value: "{{ apache_flag_easy_value }}"
+    owner: www-data
+    group: www-data
+    mode: '0644'   # world-readable so Red Team can grab it via directory listing
+ 
+  - name: hard_flag
+    path: "{{ apache_flag_hard_path }}"
+    value: "{{ apache_flag_hard_value }}"
+    owner: root
+    group: root
+    mode: '0600'   # root-only; requires privilege escalation
+ 
