@@ -1,0 +1,49 @@
+---
+
+- name: Reset Apache Web Server to Secure Baseline
+  hosts: apache_servers
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - ../../../vars/linux/common.yml
+    - ../../../vars/linux/apache.yml
+    - ../../../vars/linux/flags/apache.yml
+
+  tasks:
+    - name: Run baseline setup
+      ansible.builtin.include_role:
+        name: linux/apache
+        tasks_from: main
+
+    - name: Apply vulnerabilities
+      ansible.builtin.include_role:
+        name: linux/apache
+        tasks_from: vulns
+
+    - name: Place flags
+      ansible.builtin.include_role:
+        name: linux/apache
+        tasks_from: flags
+
+  post_tasks:
+    - name: Verify Apache is responding after reset
+      ansible.builtin.uri:
+        url: "http://127.0.0.1/"
+        return_content: true
+        status_code: 200
+      register: reset_check
+
+    - name: Confirm scoring keyword present after reset
+      ansible.builtin.assert:
+        that:
+          - "'{{ apache_scoring_keyword }}' in reset_check.content"
+        success_msg: "Apache reset complete — scoring keyword confirmed."
+        fail_msg: "Reset warning — scoring keyword missing after reset!"
+
+    - name: Display reset summary
+      ansible.builtin.debug:
+        msg:
+          - "SCP-APACHE-01 reset complete."
+          - "Baseline config restored, vulns re-applied, flags re-placed."
+          - "Verify scoring: http://{{ ansible_host }}/"

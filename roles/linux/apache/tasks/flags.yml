@@ -1,0 +1,36 @@
+---
+- name: Place easy flag in uploads directory
+  ansible.builtin.copy:
+    dest: "{{ apache_flag_easy_path }}"
+    content: "{{ apache_flag_easy_value }}\n"
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  become: true
+
+- name: Place hard flag in Apache config directory
+  ansible.builtin.copy:
+    dest: "{{ apache_flag_hard_path }}"
+    content: "{{ apache_flag_hard_value }}\n"
+    owner: root
+    group: root
+    mode: '0600'
+  become: true
+
+- name: Confirm easy flag exists
+  ansible.builtin.stat:
+    path: "{{ apache_flag_easy_path }}"
+  register: easy_flag_stat
+
+- name: Confirm hard flag exists
+  ansible.builtin.stat:
+    path: "{{ apache_flag_hard_path }}"
+  register: hard_flag_stat
+
+- name: Assert both flags placed successfully
+  ansible.builtin.assert:
+    that:
+      - easy_flag_stat.stat.exists
+      - hard_flag_stat.stat.exists
+    success_msg: "Both Apache flags confirmed present."
+    fail_msg: "One or more Apache flags failed to deploy."

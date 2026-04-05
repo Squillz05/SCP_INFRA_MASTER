@@ -1,0 +1,11 @@
+---
+- name: Setup Apache Server
+  hosts: apache_servers
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../../vars/linux/common.yml
+    - ../../vars/linux/apache.yml
+  roles:
+    - linux/common
+    - linux/apache

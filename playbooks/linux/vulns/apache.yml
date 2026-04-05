@@ -1,0 +1,29 @@
+---
+
+- name: Apply Apache Vulnerabilities
+  hosts: apache_servers
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - ../../../vars/linux/common.yml
+    - ../../../vars/linux/apache.yml
+    - ../../../vars/linux/vulns/apache.yml
+
+  pre_tasks:
+    - name: Display warning
+      ansible.builtin.debug:
+        msg:
+          - "WARNING: This playbook creates intentional security vulnerabilities."
+          - "Only run in the isolated competition environment."
+          - "Applying to: {{ inventory_hostname }} ({{ ansible_host }})"
+
+    - name: Pause for confirmation
+      ansible.builtin.pause:
+        seconds: 5
+
+  tasks:
+    - name: Load vulnerability tasks
+      ansible.builtin.include_role:
+        name: linux/apache
+        tasks_from: vulns

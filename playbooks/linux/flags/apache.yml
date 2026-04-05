@@ -1,0 +1,29 @@
+---
+
+- name: Deploy Apache Flags
+  hosts: apache_servers
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - ../../../vars/linux/common.yml
+    - ../../../vars/linux/apache.yml
+    - ../../../vars/linux/flags/apache.yml
+
+  tasks:
+    - name: Load flag placement tasks
+      ansible.builtin.include_role:
+        name: linux/apache
+        tasks_from: flags
+
+  post_tasks:
+    - name: Display flag deployment summary
+      ansible.builtin.debug:
+        msg:
+          - "Apache flags placed:"
+          - "  Easy : {{ apache_flag_easy_path }}"
+          - "         Value: {{ apache_flag_easy_value }}"
+          - "         Access: http://{{ ansible_host }}/uploads/.scp_containment.txt"
+          - "  Hard : {{ apache_flag_hard_path }}"
+          - "         Value: {{ apache_flag_hard_value }}"
+          - "         Requires: root access or priv escalation"
