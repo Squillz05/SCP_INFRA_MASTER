@@ -3,7 +3,7 @@ Service Name: openssh
 ========================================
 
 Purpose:
-
+Allows secure remote access to a device with flexible authentication options.
 
 
 Default Users / Credentials:

@@ -1,12 +1,12 @@
 ---
 
-- name: Setup OpenSSH Competition Vulnerabilities
+- name: Setup OpenSSH Competition Flags
   hosts: openssh_servers
   vars_files:
     - ../../../vars/linux/openssh.yml
-    - ../../../vars/linux/vulns/openssh.yml
+    - ../../../vars/linux/flags/openssh.yml
   tasks:
-    - name: Load Vulnerability Tasks
+    - name: Load Flag Tasks
       ansible.builtin.include_role:
         name: linux/openssh
         tasks_from: flags

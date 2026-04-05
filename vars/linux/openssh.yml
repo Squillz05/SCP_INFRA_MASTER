@@ -1,5 +1,2 @@
 ---
 
-flag:
-  sshd: "SCP{insecure_shell_daemon}"
-  user_persistence: "SCP{bans_cant_stop_me}"

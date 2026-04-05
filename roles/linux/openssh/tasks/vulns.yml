@@ -27,6 +27,7 @@
     removes: "{{ file_path }}"
   vars: 
     file_path: /home/ntf/o5.orders
+  become: true
 
 - name: Add Dr. Bright Ban Note To NTF Home
   ansible.builtin.template:
