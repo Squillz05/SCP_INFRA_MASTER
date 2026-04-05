@@ -1,0 +1,28 @@
+---
+# ==============================================================================
+# Author: Nathan Russell
+# Date Created: 04/02/2026
+#
+# Role for Flag Installation on OpenSSH
+# Actions:
+# - Install SSHd status Flag
+# ==============================================================================
+
+- name: Create SSHd override folder
+  ansible.builtin.file:
+    path: /usr/lib/systemd/system/sshd.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Add Flag Override
+  ansible.builtin.template:
+    src: templates/flag.j2
+    dest: /usr/lib/systemd/system/sshd.service.d/flag.conf
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Restart Systemd Daemon

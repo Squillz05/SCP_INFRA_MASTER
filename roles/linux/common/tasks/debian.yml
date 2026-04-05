@@ -1,0 +1,31 @@
+---
+# Debian-only Linux Common Role
+
+# Install Base Packages
+- name: Install Base Packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  become: true
+  loop: "{{ apt_packages }}"
+
+# Set DNS (Debian fallback — writes resolv.conf directly)
+- name: Set DNS Server
+  ansible.builtin.copy:
+    dest: /etc/resolv.conf
+    content: |
+      nameserver {{ dns }}
+  become: true
+  ignore_errors: true
+
+# Add Users
+- name: Add Users
+  ansible.builtin.user:
+    user: "{{ item.username }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    groups: "{{ ['sudo'] if item.privileged else [] }}"
+    append: yes
+    state: present
+  become: true
+  loop: "{{ users }}"

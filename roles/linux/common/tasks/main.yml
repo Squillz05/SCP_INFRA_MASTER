@@ -1,63 +1,24 @@
 ---
-# ==============================================================================
-# Author: Nathan Russell
-# Date Created: 04/02/2026
-#
-# Role for basic Linux configuration
-# Actions:
-# - Sets Hostname
-# - Sets /etc/hosts
-# - Sets DNS Server
-# - Install Base Packages
-# - Creates Users
-# ==============================================================================
 
-- name: Install Base Packages (APT)
-  ansible.builtin.apt:
-    name: "{{ item }}"
-    state: present
-  become: true
-  loop: "{{ apt_packages }}"
-  when: ansible_os_family == "Debian"
-
-- name: Install Base Packages (DNF)
-  ansible.builtin.dnf:
-    name: "{{ item }}"
-    state: present
-  become: true
-  loop: "{{ dnf_packages }}"
-  when: ansible_os_family == "RedHat"  
-
+# Set Hostname
 - name: Set Hostname
   ansible.builtin.hostname:
     name: "{{ inventory_hostname }}.{{ domain }}"
   become: true
 
+# Set /etc/hosts
 - name: Set /etc/hosts
   ansible.builtin.template:
     src: ./templates/hosts.j2
     dest: /etc/hosts
   become: true
 
-- name: Set DNS Server
-  community.general.nmcli:
-    conn_name: "{{ item }}"
-    type: ethernet
-    dns4: "{{ dns }}"
-    dns4_ignore_auto: yes
-    state: present
-  become: true
-  loop: "{{ ansible_interfaces }}"
-  when: item != 'lo'  
+# Main dispatcher for OS-specific tasks
 
-- name: Add Users
-  ansible.builtin.user:
-    user: "{{ item.username }}"
-    password: "{{ item.password | password_hash('sha512') }}"
-    groups: "{{ [privileged_group] if item.privileged else [] }}"
-    append: yes
-    state: present
-  become: true
-  vars:
-    privileged_group: "{{ 'sudo' if ansible_os_family == 'Debian' else 'wheel' }}"
-  loop: "{{ users }}"
+- name: Load Debian tasks
+  ansible.builtin.include_tasks: debian.yml
+  when: ansible_os_family == "Debian"
+
+- name: Load Rocky Linux tasks
+  ansible.builtin.include_tasks: rocky.yml
+  when: ansible_os_family == "RedHat"

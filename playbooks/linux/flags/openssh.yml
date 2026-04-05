@@ -1,0 +1,13 @@
+---
+
+- name: Setup OpenSSH Competition Flags
+  hosts: openssh_servers
+  vars_files:
+    - ../../../vars/linux/openssh.yml
+    - ../../../vars/linux/flags/openssh.yml
+  tasks:
+    - name: Load Flag Tasks
+      ansible.builtin.include_role:
+        name: linux/openssh
+        tasks_from: flags
+        

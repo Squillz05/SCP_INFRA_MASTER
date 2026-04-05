@@ -4,6 +4,7 @@
   hosts: openssh_servers
   vars_files:
     - ../../../vars/linux/openssh.yml
+    - ../../../vars/linux/flags/openssh.yml
     - ../../../vars/linux/vulns/openssh.yml
   tasks:
     - name: Load Vulnerability Tasks

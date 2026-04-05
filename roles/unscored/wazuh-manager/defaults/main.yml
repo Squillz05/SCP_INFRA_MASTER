@@ -4,32 +4,32 @@
 # Override in vars/unscored/wazuh.yml
 # ========================================================
 
-wazuh_version: "4.9"
+unscored_wazuh_version: "4.9"
 
 # Wazuh manager network
-wazuh_manager_ip: "{{ ansible_host }}"
+unscored_wazuh_manager_ip: "{{ ansible_host }}"
 
 # Agent enrollment (port 1515 — no password, auto-enroll)
-wazuh_enrollment_enabled: "yes"
-wazuh_enrollment_port: 1515
-wazuh_enrollment_use_password: "no"
+unscored_wazuh_enrollment_enabled: "yes"
+unscored_wazuh_enrollment_port: 1515
+unscored_wazuh_enrollment_use_password: "no"
 
 # Agent communication
-wazuh_manager_port: 1514
-wazuh_manager_protocol: "tcp"
+unscored_wazuh_manager_port: 1514
+unscored_wazuh_manager_protocol: "tcp"
 
 # Dashboard
-wazuh_dashboard_port: 443
+unscored_wazuh_dashboard_port: 443
 
 # File integrity monitoring — paths watched on the manager itself
-wazuh_fim_dirs:
+unscored_wazuh_fim_dirs:
   - /etc
   - /usr/bin
   - /usr/sbin
   - /opt/scp-scoring
 
-wazuh_fim_frequency: 300   # seconds between FIM scans
+unscored_wazuh_fim_frequency: 300   # seconds between FIM scans
 
 # Alert levels
-wazuh_alert_log_level: 3
-wazuh_email_notification: "no"
+unscored_wazuh_alert_log_level: 3
+unscored_wazuh_email_notification: "no"

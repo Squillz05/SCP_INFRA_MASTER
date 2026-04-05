@@ -1,0 +1,42 @@
+---
+# ==============================================================================
+# Author: Nathan Russell
+# Date Created: 04/02/2026
+#
+# Role for basic Linux configuration
+# Actions:
+# - Sets Hostname
+# - Sets /etc/hosts
+# - Sets DNS Server
+# - Install Base Packages
+# - Creates Users
+# ==============================================================================
+
+- name: Install Base Packages (DNF)
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: present
+  become: true
+  loop: "{{ dnf_packages }}"
+  when: ansible_os_family == "RedHat"
+
+- name: Set DNS Server
+  community.general.nmcli:
+    conn_name: "{{ item }}"
+    type: ethernet
+    dns4: "{{ dns }}"
+    dns4_ignore_auto: yes
+    state: present
+  become: true
+  loop: "{{ ansible_interfaces }}"
+  when: item != 'lo'  
+
+- name: Add Users
+  ansible.builtin.user:
+    user: "{{ item.username }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    groups: "{{ ['wheel'] if item.privileged else [] }}"
+    append: yes
+    state: present
+  become: true
+  loop: "{{ users }}"

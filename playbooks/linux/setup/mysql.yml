@@ -5,7 +5,7 @@
 # Author: William Walker (Grey Team)
 # ============================================================
 
-- name: Setup MySQL Server
+- name: Setup MySQL Server (Debian 13)
   hosts: mysql_servers
   become: true
   gather_facts: true
@@ -16,5 +16,9 @@
 
   roles:
     - linux/common
-    - linux/mysql
+
+  tasks:
+    - import_role:
+        name: linux/mysql
+        tasks_from: main.yml
 

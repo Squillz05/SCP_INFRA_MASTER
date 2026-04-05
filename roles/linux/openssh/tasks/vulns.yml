@@ -1,4 +1,16 @@
 ---
+# ==============================================================================
+# Author: Nathan Russell
+# Date Created: 04/03/2026
+#
+# Role for Vulnerability Installation on OpenSSH
+# Actions:
+# - Create Persistence Script for Dr. Bright
+# - Create Dr. Bright Ban Note
+# - Weaken SSH Config
+# - Make /etc/ssh ACL permissive
+# - Install backdoor (pending)
+# ==============================================================================
 
 - name: Create User Persistence Script
   ansible.builtin.template:
@@ -9,19 +21,24 @@
     mode: "0755"
   become: true
 
-- name: Restart Systemd Daemon
-  ansible.builtin.shell: "systemctl daemon-reload"
+- name: Remove o5.orders If Present
+  ansible.builtin.command: "chattr -i {{ file_path }}"
+  args:
+    removes: "{{ file_path }}"
+  vars: 
+    file_path: /home/ntf/o5.orders
   become: true
 
-- name: Install Paramiko
-  ansible.builtin.dnf:
-    name: "{{ item }}"
-    state: latest
-    update_cache: true
+- name: Add Dr. Bright Ban Note To NTF Home
+  ansible.builtin.template:
+    src: templates/o5.j2
+    dest: /home/ntf/o5.orders
+    owner: grayteam
+    group: grayteam
+    mode: "0644"
+    attributes: "+i"
   become: true
-  loop:
-    - epel-release
-    - python3-paramiko
+  notify: Restart Systemd Daemon
 
 - name: Soften SSH Server
   ansible.builtin.template:

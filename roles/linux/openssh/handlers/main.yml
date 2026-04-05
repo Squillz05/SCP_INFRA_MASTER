@@ -5,4 +5,8 @@
     name: sshd
     state: restarted
   become: true
+
+- name: Restart Systemd Daemon
+  ansible.builtin.shell: "systemctl daemon-reload"
+  become: true
     
