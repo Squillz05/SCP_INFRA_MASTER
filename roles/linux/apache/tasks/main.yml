@@ -66,7 +66,16 @@
     mode: '0644'
   become: true
 
-# ── 7. Deploy secure Apache vhost config ──────────────────────────────────────
+- name: Enable Apache modules
+  community.general.apache2_module:
+    name: "{{ item }}"
+    state: present
+  become: true
+  loop:
+    - rewrite
+    - headers
+  notify: Restart Apache
+
 - name: Deploy Apache vhost configuration
   ansible.builtin.template:
     src: scp-site.conf.j2
@@ -77,7 +86,6 @@
   become: true
   notify: Restart Apache
 
-# ── 8. Disable default site, enable SCP site ─────────────────────────────────
 - name: Disable default Apache site
   ansible.builtin.command: a2dissite 000-default.conf
   become: true
@@ -90,18 +98,6 @@
   changed_when: true
   notify: Restart Apache
 
-# ── 9. Enable required Apache modules ─────────────────────────────────────────
-- name: Enable Apache modules
-  community.general.apache2_module:
-    name: "{{ item }}"
-    state: present
-  become: true
-  loop:
-    - rewrite
-    - headers
-  notify: Restart Apache
-
-# ── 10. Secure baseline PHP config ────────────────────────────────────────────
 - name: Deploy secure baseline PHP config
   ansible.builtin.template:
     src: php_secure.ini.j2
@@ -112,7 +108,6 @@
   become: true
   notify: Restart Apache
 
-# ── 11. Configure UFW: allow HTTP ─────────────────────────────────────────────
 - name: Allow HTTP through UFW
   ansible.builtin.ufw:
     rule: allow
@@ -133,7 +128,6 @@
     policy: deny
   become: true
 
-# ── 12. Enable and start Apache ───────────────────────────────────────────────
 - name: Enable and start Apache2
   ansible.builtin.systemd:
     name: apache2
@@ -141,7 +135,6 @@
     enabled: true
   become: true
 
-# ── 13. Verify Apache is listening ────────────────────────────────────────────
 - name: Verify Apache responds on port 80
   ansible.builtin.wait_for:
     host: "127.0.0.1"
