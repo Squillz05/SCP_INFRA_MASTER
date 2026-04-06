@@ -1,7 +1,7 @@
 ---
 # ====================================================
 # Linux Common Configuration Variables
-# Used By: playbooks/linux.yml -> roles/linux/common
+# Used By: linux service playbooks and linux-workstations.yml -> roles/linux/common
 # ====================================================
 
 apt_packages:
@@ -30,3 +30,13 @@ users:
   - username: "ntf"
     password: "s3cuRe-c0n+a1n-Pr0tecT"
     privileged: true
+
+# Blue (BLUE-LIN-*) and Red (RED-KALI-*) Linux desktops: gray-team Linux
+# personas (grayteam, scp073, scp343), ntf, plus cyberrange for range access.
+# Override in a playbook with linux_common_users if you need a different slice.
+linux_workstation_user_names:
+  - cyberrange
+  - grayteam
+  - scp073
+  - scp343
+  - ntf

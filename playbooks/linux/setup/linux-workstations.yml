@@ -1,0 +1,26 @@
+---
+# Baseline Blue (Ubuntu BLUE-LIN-*) and Red (Kali RED-KALI-*) Linux desktops
+# with shared local users: gray-team personas, ntf, and cyberrange (see
+# vars/linux/common.yml — linux_workstation_user_names).
+#
+# Prereq: SSH reachable. See inventory/group_vars/linux.yml if auth fails despite a
+# correct password (ssh-agent key spam) or you need ProxyJump to reach 10.10.10.x.
+#
+# Fresh OpenStack images only have the cloud default user + your key until this
+# playbook creates cyberrange:
+#   Ubuntu: -e ansible_user=ubuntu --private-key ~/.ssh/<openstack_key.pem>
+#   Kali:   -e ansible_user=kali  --private-key ~/.ssh/<openstack_key.pem>
+# (Drop ansible_password for that run, or use -e ansible_password=, so Ansible uses key-only.)
+#
+- name: Baseline Blue and Red Linux workstations
+  hosts: blue_linux_workstations:red_linux_workstations
+  gather_facts: true
+  become: true
+  vars_files:
+    - ../../../vars/linux/common.yml
+  pre_tasks:
+    - name: Build local user list for workstations
+      ansible.builtin.set_fact:
+        linux_common_users: "{{ users | selectattr('username', 'in', linux_workstation_user_names) | list }}"
+  roles:
+    - linux/common

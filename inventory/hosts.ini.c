@@ -1,33 +1,13 @@
 #   LINUX HOSTS
 
 [openssh_servers]
-scp-openssh-01 ansible_host=10.10.10.33
+scp-openssh-01 ansible_host=10.10.10.138
 
 [openvpn_servers]
 scp-openvpn-01 ansible_host=10.10.10.104
 
 [mysql_servers]
-scp-mysql-01 ansible_host=10.10.10.102
-
-[apache_servers]
-scp-apache-01 ansible_host=100.65.5.218
-
-# Blue Team Ubuntu 22.04 workstations (OpenTofu BLUE-LIN-*)
-[blue_linux_workstations]
-BLUE-LIN-01 ansible_host=10.10.10.45
-BLUE-LIN-02 ansible_host=10.10.10.46
-BLUE-LIN-03 ansible_host=10.10.10.47
-BLUE-LIN-04 ansible_host=10.10.10.48
-BLUE-LIN-05 ansible_host=10.10.10.49
-
-# Red Team Kali workstations (OpenTofu RED-KALI-*)
-[red_linux_workstations]
-RED-KALI-01 ansible_host=10.10.10.61
-RED-KALI-02 ansible_host=10.10.10.62
-RED-KALI-03 ansible_host=10.10.10.63
-RED-KALI-04 ansible_host=10.10.10.64
-RED-KALI-05 ansible_host=10.10.10.65
-RED-KALI-06 ansible_host=10.10.10.66
+scp-mysql-01 ansible_host=100.65.8.17
 
 [scoring_host]
 scp_scoring01 ansible_host=10.10.10.210
@@ -36,9 +16,6 @@ scp_scoring01 ansible_host=10.10.10.210
 openssh_servers
 openvpn_servers
 mysql_servers
-apache_servers
-blue_linux_workstations
-red_linux_workstations
 scoring_host
 
 [linux:vars]
@@ -49,7 +26,7 @@ ansible_port = 22
 ansible_python_interpreter = /usr/bin/python3
 ansible_become_user = root
 ansible_become_method = sudo
-# Extra SSH client options (IdentitiesOnly, ProxyJump, etc.): inventory/group_vars/linux.yml
+ansible_ssh_common_args = -o ProxyJump=sshjump@ssh.cyberrange.rit.edu -o StrictHostKeyChecking=no
 
 
 #   WINDOWS HOSTS
