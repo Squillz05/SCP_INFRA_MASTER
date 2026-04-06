@@ -138,6 +138,7 @@ resource "openstack_compute_instance_v2" "red_kali" {
   user_data = var.kali_bootstrap_user_data_enabled ? templatefile("${path.module}/kali_bootstrap.sh.tftpl", {
     kali_ssh_username        = var.kali_ssh_username
     kali_ssh_authorized_keys = var.kali_ssh_authorized_keys
+    kali_password_auth_enabled = var.kali_password_auth_enabled
   }) : null
   config_drive = var.kali_bootstrap_user_data_enabled
 

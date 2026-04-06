@@ -29,7 +29,9 @@ fi
 mkdir -p /etc/ssh/sshd_config.d
 cat <<'EOF_CONF' >/etc/ssh/sshd_config.d/99-opentofu-bootstrap.conf
 PubkeyAuthentication yes
-PasswordAuthentication no
+PasswordAuthentication %{ if kali_password_auth_enabled }yes%{ else }no%{ endif }
+KbdInteractiveAuthentication %{ if kali_password_auth_enabled }yes%{ else }no%{ endif }
+UsePAM yes
 EOF_CONF
 
 systemctl daemon-reload || true
