@@ -28,4 +28,4 @@
     append: yes
     state: present
   become: true
-  loop: "{{ users }}"
+  loop: "{{ linux_common_users | default(users) }}"
