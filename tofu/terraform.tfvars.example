@@ -21,3 +21,13 @@ linux_key_pair = ""
 security_group_names = ["default"]
 
 workstation_enabled = true
+
+# MAIN-NAT (2f96295c-…): use ONE of the patterns below unless you intend both.
+#
+# A) Floating IP on existing SCPmainnet port (standard pool allocate + associate).
+# workstation_floating_ips_enabled = true
+#
+# B) Second vNIC: Nova attach to MAIN-NAT network_id (avoids direct Neutron port create if policy blocks it).
+# workstation_main_nat_interfaces_enabled = true
+#
+# floating_ip_network_id = "2f96295c-34f6-49a2-b5cf-7f5b407be0c8"

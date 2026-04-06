@@ -7,13 +7,13 @@ variable "main_project_id" {
 variable "blue_project_id" {
   type        = string
   description = "Keystone project ID where Blue Team workstations are created."
-  default = "bf49348094ba4708b0ea9f913bb7e6f2"
+  default     = "bf49348094ba4708b0ea9f913bb7e6f2"
 }
 
 variable "red_project_id" {
   type        = string
   description = "Keystone project ID where Red Team workstations are created."
-  default = "7564cb869e4347b49f3ff18cba582102"
+  default     = "7564cb869e4347b49f3ff18cba582102"
 }
 
 # --- Network (SCPmainnet in main project; typically shared to Blue/Red via Neutron RBAC) ---
@@ -66,5 +66,23 @@ variable "security_group_names" {
 variable "workstation_enabled" {
   type        = bool
   description = "Set false to skip creating all workstation instances (plan/validate only)."
+  default     = true
+}
+
+variable "workstation_floating_ips_enabled" {
+  type        = bool
+  description = "Allocate a floating IP from MAIN-NAT per workstation and associate to its existing SCPmainnet NIC. Distinct from workstation_main_nat_interfaces_enabled (second vNIC)."
+  default     = false
+}
+
+variable "floating_ip_network_id" {
+  type        = string
+  description = "MAIN-NAT Neutron UUID (2f96295c-…): external pool for floating IPs, or target network for second NIC when workstation_main_nat_interfaces_enabled."
+  default     = "2f96295c-34f6-49a2-b5cf-7f5b407be0c8"
+}
+
+variable "workstation_main_nat_interfaces_enabled" {
+  type        = bool
+  description = "Second vNIC on MAIN-NAT via Nova attach (network_id only; avoids Terraform-managed Neutron port create)."
   default     = true
 }
