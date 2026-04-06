@@ -65,6 +65,7 @@
   notify: Restart MySQL
   when: mysql_vuln_insecure_config
 
+
 # Enable remote MySQL root login (real root account)
 - name: Allow remote MySQL root login
   community.mysql.mysql_user:
