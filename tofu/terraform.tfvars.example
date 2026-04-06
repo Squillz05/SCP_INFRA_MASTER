@@ -25,8 +25,9 @@ linux_key_pair = ""
 # Optional: run bootstrap script at instance creation (OpenStack user_data/cloud-init).
 # IMPORTANT: changing this later can force Kali instance replacement.
 # kali_bootstrap_user_data_enabled = true
-# kali_ssh_username = "kali"
+# kali_ssh_username = "cyberrange"
 # kali_ssh_authorized_keys = ["ssh-ed25519 AAAA... your-key-comment"]
+# kali_password_auth_enabled = true
 
 security_group_names = ["default"]
 

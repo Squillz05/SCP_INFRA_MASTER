@@ -108,11 +108,17 @@ variable "kali_bootstrap_user_data_enabled" {
 variable "kali_ssh_username" {
   type        = string
   description = "Username on Kali image that should receive authorized_keys entries."
-  default     = "kali"
+  default     = "cyberrange"
 }
 
 variable "kali_ssh_authorized_keys" {
   type        = list(string)
   description = "Extra SSH public keys written to the Kali user's authorized_keys by bootstrap."
   default     = ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC/GxJPyL4suVp9qJifEMBlJBQlKEkzJ2A1yg2ADgs9Cd28K3mGFq8b6QIGuR+XVvTG/JpDNcdncml7UnmZnWZvkZ3P7w7Gf2sacA5ppYceLwLjPNVF7qydkplLbU0SFk8is9JORv0g/Uo4ZvequTc0Z34XusFkn79TwHxRzXQ3EGZTEhmAahAPVKq71ebQVBoOfmbMDHipOXrAHx0j+pkpZTrbUozUIv0VrAMX89AMn/5UUUf14rScGJeacJQAHT5DqJJozycgfXYJNS4EHm5Un+mnZHttk9Bg0n7mW0PDi7+83B6vBf/zR2D67EE5D3amYYrtxwhmjH1rL4lE33Od"]
+}
+
+variable "kali_password_auth_enabled" {
+  type        = bool
+  description = "Whether cloud-init bootstrap enables SSH password authentication on Kali."
+  default     = true
 }
