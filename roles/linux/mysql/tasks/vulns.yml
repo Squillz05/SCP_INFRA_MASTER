@@ -20,12 +20,13 @@
     recurse: true
   when: mysql_vuln_world_readable_db
 
-# Make MySQL error log world-readable
-- name: Make MySQL error log world-readable
+- name: Ensure MySQL error log exists and is world-readable
   ansible.builtin.file:
     path: /var/log/mysql/error.log
     state: touch
     mode: '0777'
+    owner: mysql
+    group: adm
   when: mysql_vuln_world_readable_error_log
 
 
