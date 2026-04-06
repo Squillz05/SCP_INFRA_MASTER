@@ -24,8 +24,10 @@
 - name: Make MySQL error log world-readable
   ansible.builtin.file:
     path: /var/log/mysql/error.log
+    state: touch
     mode: '0777'
   when: mysql_vuln_world_readable_error_log
+
 
 # Deploy insecure MariaDB config template
 - name: Deploy insecure MariaDB config
