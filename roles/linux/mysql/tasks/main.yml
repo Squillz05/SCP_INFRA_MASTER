@@ -27,7 +27,6 @@
   become: true
 
 # Create Grey Team local-socket admin (root-equivalent)
-# Used only by Grey Team for reset/vuln playbooks
 - name: Create Grey Team local admin user
   community.mysql.mysql_user:
     name: "{{ mysql_grey_admin_user }}"
@@ -47,6 +46,38 @@
     login_user: "{{ mysql_grey_admin_user }}"
     login_password: "{{ mysql_grey_admin_pass }}"
     login_unix_socket: /run/mysqld/mysqld.sock
+  become: true
+
+# Create additional SCP-themed databases
+- name: Create SCP-themed databases
+  community.mysql.mysql_db:
+    name: "{{ item }}"
+    state: present
+    login_user: "{{ mysql_grey_admin_user }}"
+    login_password: "{{ mysql_grey_admin_pass }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+  loop:
+    - scp_subjects
+    - scp_logs
+    - scp_research
+  become: true
+
+# Create tables + filler data for SCP databases
+- name: Create SCP tables and insert data
+  community.mysql.mysql_query:
+    query: "{{ item.query }}"
+    login_user: "{{ mysql_grey_admin_user }}"
+    login_password: "{{ mysql_grey_admin_pass }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+  loop:
+    - { query: "CREATE TABLE IF NOT EXISTS scp_subjects.entities (id INT AUTO_INCREMENT PRIMARY KEY, scp_id VARCHAR(20), class VARCHAR(20), description TEXT);" }
+    - { query: "INSERT INTO scp_subjects.entities (scp_id, class, description) VALUES ('SCP-173','Euclid','Statue that moves when not observed'), ('SCP-096','Euclid','Shy humanoid that becomes hostile when viewed'), ('SCP-682','Keter','Indestructible reptile');" }
+
+    - { query: "CREATE TABLE IF NOT EXISTS scp_logs.incidents (id INT AUTO_INCREMENT PRIMARY KEY, scp_id VARCHAR(20), log TEXT);" }
+    - { query: "INSERT INTO scp_logs.incidents (scp_id, log) VALUES ('SCP-173','Containment breach in Site-19'), ('SCP-096','Subject viewed by D-Class personnel'), ('SCP-682','Termination attempt #57 failed');" }
+
+    - { query: "CREATE TABLE IF NOT EXISTS scp_research.notes (id INT AUTO_INCREMENT PRIMARY KEY, researcher VARCHAR(50), scp_id VARCHAR(20), notes TEXT);" }
+    - { query: "INSERT INTO scp_research.notes (researcher, scp_id, notes) VALUES ('Dr. Bright','SCP-173','Testing halted due to safety concerns'), ('Dr. Clef','SCP-096','Do not view photographs'), ('Dr. Gears','SCP-682','Subject shows extreme adaptability');" }
   become: true
 
 # Create Apache → MySQL service account
@@ -76,7 +107,6 @@
   become: true
 
 # Create Blue Team admin-level MySQL user
-# Allows defensive actions but cannot pivot to OS root
 - name: Create Blue Team MySQL admin user
   community.mysql.mysql_user:
     name: "{{ mysql_blue_user }}"
@@ -88,7 +118,6 @@
     login_password: "{{ mysql_grey_admin_pass }}"
     login_unix_socket: /run/mysqld/mysqld.sock
   become: true
-
 
 # Verify MySQL is running
 - name: Verify MySQL service status
