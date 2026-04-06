@@ -1,0 +1,16 @@
+---
+# Baseline OpenTofu Blue Linux desktops (BLUE-LIN-01..05) with shared local users.
+# Adds users from vars/linux/common.yml (cyberrange, grayteam, scp073, etc.) via roles/linux/common.
+#
+# Prereq: SSH reachable (same path as other linux hosts — ProxyJump in linux:vars).
+# If the image only has ubuntu + key until local users exist:
+#   ansible-playbook ... -e ansible_user=ubuntu
+#
+- name: Baseline Blue Linux workstations
+  hosts: blue_linux_workstations
+  gather_facts: true
+  become: true
+  vars_files:
+    - ../../../vars/linux/common.yml
+  roles:
+    - linux/common
