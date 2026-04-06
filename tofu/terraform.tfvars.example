@@ -18,6 +18,16 @@ kali_image_name    = "Kali Linux 2025"
 # Optional: key pair registered in each project for Linux SSH.
 linux_key_pair = ""
 
+# Optional: open SSH/22 on all Blue+Red workstations.
+# kali_ssh_port_enabled = true
+# kali_ssh_allowed_cidrs = ["10.10.10.0/24"]
+
+# Optional: run bootstrap script at instance creation (OpenStack user_data/cloud-init).
+# IMPORTANT: changing this later can force Kali instance replacement.
+# kali_bootstrap_user_data_enabled = true
+# kali_ssh_username = "kali"
+# kali_ssh_authorized_keys = ["ssh-ed25519 AAAA... your-key-comment"]
+
 security_group_names = ["default"]
 
 workstation_enabled = true
