@@ -1,0 +1,37 @@
+#!/bin/bash
+set -euxo pipefail
+
+SSH_USER="${kali_ssh_username}"
+if [ "$SSH_USER" = "root" ]; then
+  HOME_DIR="/root"
+else
+  HOME_DIR="/home/$SSH_USER"
+fi
+
+mkdir -p "$HOME_DIR/.ssh"
+touch "$HOME_DIR/.ssh/authorized_keys"
+chmod 700 "$HOME_DIR/.ssh"
+chmod 600 "$HOME_DIR/.ssh/authorized_keys"
+if id "$SSH_USER" >/dev/null 2>&1; then
+  chown -R "$SSH_USER:$SSH_USER" "$HOME_DIR/.ssh"
+fi
+
+cat <<'EOF_KEYS' >> "$HOME_DIR/.ssh/authorized_keys"
+%{ for key in kali_ssh_authorized_keys ~}
+${key}
+%{ endfor ~}
+EOF_KEYS
+
+if [ -s "$HOME_DIR/.ssh/authorized_keys" ]; then
+  sort -u "$HOME_DIR/.ssh/authorized_keys" -o "$HOME_DIR/.ssh/authorized_keys"
+fi
+
+mkdir -p /etc/ssh/sshd_config.d
+cat <<'EOF_CONF' >/etc/ssh/sshd_config.d/99-opentofu-bootstrap.conf
+PubkeyAuthentication yes
+PasswordAuthentication no
+EOF_CONF
+
+systemctl daemon-reload || true
+systemctl enable ssh || systemctl enable sshd || true
+systemctl restart ssh || systemctl restart sshd || true

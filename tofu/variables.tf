@@ -86,3 +86,33 @@ variable "workstation_main_nat_interfaces_enabled" {
   description = "Second vNIC on MAIN-NAT via Nova attach (network_id only; avoids Terraform-managed Neutron port create)."
   default     = true
 }
+
+variable "kali_ssh_port_enabled" {
+  type        = bool
+  description = "Create and attach project-scoped workstation security groups that allow inbound SSH (TCP/22) for all Blue and Red workstations."
+  default     = true
+}
+
+variable "kali_ssh_allowed_cidrs" {
+  type        = list(string)
+  description = "CIDR blocks allowed to reach workstation SSH (TCP/22) when kali_ssh_port_enabled is true."
+  default     = ["0.0.0.0/0"]
+}
+
+variable "kali_bootstrap_user_data_enabled" {
+  type        = bool
+  description = "Apply a bootstrap script at Kali instance creation time via OpenStack user_data."
+  default     = true
+}
+
+variable "kali_ssh_username" {
+  type        = string
+  description = "Username on Kali image that should receive authorized_keys entries."
+  default     = "kali"
+}
+
+variable "kali_ssh_authorized_keys" {
+  type        = list(string)
+  description = "Extra SSH public keys written to the Kali user's authorized_keys by bootstrap."
+  default     = ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC/GxJPyL4suVp9qJifEMBlJBQlKEkzJ2A1yg2ADgs9Cd28K3mGFq8b6QIGuR+XVvTG/JpDNcdncml7UnmZnWZvkZ3P7w7Gf2sacA5ppYceLwLjPNVF7qydkplLbU0SFk8is9JORv0g/Uo4ZvequTc0Z34XusFkn79TwHxRzXQ3EGZTEhmAahAPVKq71ebQVBoOfmbMDHipOXrAHx0j+pkpZTrbUozUIv0VrAMX89AMn/5UUUf14rScGJeacJQAHT5DqJJozycgfXYJNS4EHm5Un+mnZHttk9Bg0n7mW0PDi7+83B6vBf/zR2D67EE5D3amYYrtxwhmjH1rL4lE33Od"]
+}
