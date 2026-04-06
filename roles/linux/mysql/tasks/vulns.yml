@@ -12,15 +12,6 @@
     check_implicit_admin: true
   when: mysql_vuln_enable_anonymous
 
-# Bind MySQL to all interfaces (0.0.0.0)
-- name: Set MySQL bind-address to 0.0.0.0
-  ansible.builtin.lineinfile:
-    path: /etc/mysql/mariadb.conf.d/50-server.cnf
-    regexp: '^bind-address'
-    line: "bind-address = 0.0.0.0"
-  notify: Restart MySQL
-  when: mysql_vuln_bind_all
-
 # Make foundation_db world-readable
 - name: Make foundation_db directory world-readable
   ansible.builtin.file:
@@ -28,24 +19,6 @@
     mode: '0777'
     recurse: true
   when: mysql_vuln_world_readable_db
-
-# Enable local_infile (SQLi → file read)
-- name: Enable local_infile
-  community.mysql.mysql_variables:
-    variable: local_infile
-    value: 1
-    login_unix_socket: /run/mysqld/mysqld.sock
-    check_implicit_admin: true
-  when: mysql_vuln_enable_local_infile
-
-# Enable general query log (credential leakage)
-- name: Enable general query log
-  community.mysql.mysql_variables:
-    variable: general_log
-    value: 1
-    login_unix_socket: /run/mysqld/mysqld.sock
-    check_implicit_admin: true
-  when: mysql_vuln_enable_general_log
 
 # Make MySQL error log world-readable
 - name: Make MySQL error log world-readable
@@ -64,7 +37,6 @@
     mode: '0644'
   notify: Restart MySQL
   when: mysql_vuln_insecure_config
-
 
 # Enable remote MySQL root login (real root account)
 - name: Allow remote MySQL root login
