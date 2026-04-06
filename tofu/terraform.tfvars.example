@@ -1,0 +1,23 @@
+# Copy to terraform.tfvars (do not commit secrets / real IDs if the repo is public).
+
+main_project_id = "e5c8122da40747928b67b707f5f00961"
+blue_project_id = "REPLACE_WITH_BLUE_PROJECT_UUID"
+red_project_id  = "REPLACE_WITH_RED_PROJECT_UUID"
+
+# SCPmainnet (main project). Default in variables.tf matches this; omit or override if the UUID ever changes.
+# main_network_id = "ec2ac4a5-e5af-464c-bb0c-f65bad9e2f43"
+
+# Horizon: Compute → Images (override if Glance name differs from variables.tf defaults).
+# windows_image_name = "Windows11"
+ubuntu_image_name = "Ubuntu 22.04"
+kali_image_name    = "Kali Linux 2025"
+
+# Optional: defaults to m1.large in variables.tf if omitted.
+# flavor_name = "m1.large"
+
+# Optional: key pair registered in each project for Linux SSH.
+linux_key_pair = ""
+
+security_group_names = ["default"]
+
+workstation_enabled = true
