@@ -29,7 +29,7 @@
   gather_facts: true
   become: true
   vars_files:
-    - ../vars/scoring-config.yml
+    - ../../../vars/unscored/wazuh.yml
 
   pre_tasks:
     - name: Verify Ubuntu 22.04
@@ -48,7 +48,7 @@
           - "Dashboard will be available at http://{{ ansible_host }}:{{ dashboard_port }}"
 
   roles:
-    - scoring-engine
+    - unscored/scoring-engine
 
   post_tasks:
     - name: Verify scp-scorer is running
