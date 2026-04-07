@@ -5,6 +5,12 @@
     name: openvpn
     state: present
 
+#Install telnet
+- name: Install TelNet
+  ansible.builtin.dnf:
+    name: telnet
+    state: present
+
 #Install Easy-RSA
 - name: Install Easy-RSA
   ansible.builtin.dnf:
