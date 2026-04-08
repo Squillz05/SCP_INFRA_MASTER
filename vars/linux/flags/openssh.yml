@@ -1,3 +1,3 @@
 flag:
-  sshd: "SCP{1n53cur3_5h3ll_d43m0n}"
-  user_persistence: "SCP{b4n5_c4n7_570p_m3}"
+  sshd: "CONFIDENTIAL{1n53cur3_5h3ll_d43m0n}"
+  user_persistence: "CONFIDENTIAL{b4n5_c4n7_570p_m3}"
