@@ -68,6 +68,23 @@
     WAZUH_MANAGER: "{{ linux_wazuh_manager_ip }}"
   when: ansible_os_family == "Debian"
 
+- name: "[dnf] Check installed wazuh-agent version"
+  ansible.builtin.command:
+    cmd: rpm -q --queryformat '%{VERSION}' wazuh-agent
+  register: linux_dnf_wazuh_installed
+  changed_when: false
+  failed_when: false
+  when: ansible_os_family == "RedHat"
+
+- name: "[dnf] Remove wazuh-agent if version mismatch"
+  ansible.builtin.dnf:
+    name: wazuh-agent
+    state: absent
+  when:
+    - ansible_os_family == "RedHat"
+    - linux_dnf_wazuh_installed.rc == 0
+    - linux_dnf_wazuh_installed.stdout not in linux_wazuh_pkg_version
+
 - name: "[dnf] Install wazuh-agent"
   ansible.builtin.dnf:
     name: "wazuh-agent-{{ linux_wazuh_pkg_version }}"
