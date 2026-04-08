@@ -18,7 +18,7 @@ users:
   - username: "cyberrange"
     password: "Cyberrange123!"
     privileged: true
-  - username: "grayteam"
+  - username: "greyteam"
     password: "DONOTTOUCH!!!@123$"
     privileged: true
   - username: "scp073"
