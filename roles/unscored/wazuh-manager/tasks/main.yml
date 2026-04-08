@@ -24,7 +24,7 @@
 
 - name: Check if Wazuh manager is already installed
   ansible.builtin.stat:
-    path: /etc/wazuh-manager/ossec.conf
+    path: /var/ossec/etc/ossec.conf
   register: unscored_wazuh_already_installed
 
 # 2. Install prerequisites
@@ -104,7 +104,6 @@
     owner: root
     group: wazuh
     mode: '0640'
-    validate: /var/ossec/bin/verify-agent-conf -f %s
   notify: Restart wazuh-manager
 
 # ----------------------------------------------------------
@@ -172,6 +171,7 @@
     cmd: /var/ossec/bin/wazuh-control status
   register: unscored_wazuh_status
   changed_when: false
+  failed_when: "'wazuh-remoted is running' not in unscored_wazuh_status.stdout"
 
 - name: Display Wazuh deployment summary
   ansible.builtin.debug:

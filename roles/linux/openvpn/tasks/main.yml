@@ -22,7 +22,7 @@
   ansible.builtin.file:
     path: /etc/openvpn
     state: directory
-    owner: cyberrange
+    owner: root
     mode: '0777'
 
 
@@ -31,7 +31,7 @@
   ansible.builtin.file:
     path: "/etc/openvpn/pki/{{ item }}"
     state: directory
-    owner: cyberrange
+    owner: root
     mode: '0777'
   loop:
    - private
@@ -44,7 +44,7 @@
   ansible.builtin.file:
     path: /etc/openvpn/pki/index.txt
     state: touch
-    owner: cyberrange
+    owner: root
     mode: '0777'
   
 #Create serial file
@@ -52,7 +52,7 @@
   ansible.builtin.copy:
     dest: /etc/openvpn/pki/serial
     content: "01\n"
-    owner: cyberrange
+    owner: root
     mode: '0777'
 
 #Create crl.pem
@@ -60,7 +60,7 @@
   ansible.builtin.file:
     path: /etc/openvpn/pki/crl.pem
     state: touch
-    owner: cyberrange
+    owner: root
     mode: '0777'
 
 #Build CA
@@ -107,7 +107,7 @@
   ansible.builtin.copy:
     src: server.conf
     dest: /etc/openvpn/server/server.conf
-    owner: cyberrange
+    owner: root
     mode: '0644'
   notify: Restart OpenVPN
 
@@ -152,7 +152,7 @@
     path: /home/cyberrange/scp-169
     state: directory
     mode: '0755'
-    owner: cyberrange
+    owner: root
        
 #Create flag
 - name: Create flag
@@ -181,7 +181,7 @@
   ansible.builtin.copy:
     src: sshd_config
     dest: /etc/ssh/sshd_config
-    owner: cyberrange
+    owner: root
     mode: '0644'
   notify: Restart sshd
 

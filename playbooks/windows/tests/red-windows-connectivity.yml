@@ -1,0 +1,76 @@
+---
+# Validate from each Red Team Windows workstation:
+# - WinRM reachability to Windows services and Red peers (TCP/5986)
+# - SMB/DC/SMTP service ports on service hosts (445/389/636/25)
+#
+# Usage:
+#   ansible-playbook playbooks/windows/tests/red-windows-connectivity.yml
+#
+- name: Validate red Windows connectivity matrix
+  hosts: red_windows_workstations
+  gather_facts: false
+
+  tasks:
+    - name: Initialize endpoint list
+      ansible.builtin.set_fact:
+        red_connectivity_targets: []
+
+    - name: Add domain controller checks
+      ansible.builtin.set_fact:
+        red_connectivity_targets: "{{ red_connectivity_targets + [ {'name': item, 'ip': hostvars[item].ansible_host, 'ports': [5986, 389, 636, 445]} ] }}"
+      loop: "{{ query('inventory_hostnames', 'domain_controllers') }}"
+
+    - name: Add SMB server checks
+      ansible.builtin.set_fact:
+        red_connectivity_targets: "{{ red_connectivity_targets + [ {'name': item, 'ip': hostvars[item].ansible_host, 'ports': [5986, 445]} ] }}"
+      loop: "{{ query('inventory_hostnames', 'smb_servers') }}"
+
+    - name: Add SMTP server checks
+      ansible.builtin.set_fact:
+        red_connectivity_targets: "{{ red_connectivity_targets + [ {'name': item, 'ip': hostvars[item].ansible_host, 'ports': [5986, 25]} ] }}"
+      loop: "{{ query('inventory_hostnames', 'smtp_servers') }}"
+
+    - name: Add peer red workstations (WinRM only) excluding self
+      ansible.builtin.set_fact:
+        red_connectivity_targets: "{{ red_connectivity_targets + [ {'name': item, 'ip': hostvars[item].ansible_host, 'ports': [5986]} ] }}"
+      loop: "{{ groups['red_windows_workstations'] | difference([inventory_hostname]) }}"
+
+    - name: Run network tests from workstation
+      ansible.windows.win_shell: |
+        $targets = @'
+        {{ red_connectivity_targets | to_json }}
+        '@ | ConvertFrom-Json
+
+        $results = @()
+        foreach ($t in $targets) {
+          foreach ($p in $t.ports) {
+            $ok = Test-NetConnection -ComputerName $t.ip -Port $p -InformationLevel Quiet
+            $results += [PSCustomObject]@{
+              source = $env:COMPUTERNAME
+              target = [string]$t.name
+              target_ip = [string]$t.ip
+              port = [int]$p
+              reachable = [bool]$ok
+            }
+          }
+        }
+        $results | ConvertTo-Json -Depth 4 -Compress
+      register: red_connectivity_raw
+      changed_when: false
+
+    - name: Parse per-host connectivity results
+      ansible.builtin.set_fact:
+        red_connectivity_results: "{{ red_connectivity_raw.stdout | from_json }}"
+
+    - name: Show per-host connectivity table
+      ansible.builtin.debug:
+        msg: "{{ red_connectivity_results }}"
+
+    - name: Fail if any expected route/port is unreachable
+      ansible.builtin.assert:
+        that:
+          - (red_connectivity_results | selectattr('reachable', 'equalto', false) | list | length) == 0
+        fail_msg: >-
+          Connectivity failures from {{ inventory_hostname }}:
+          {{ red_connectivity_results | selectattr('reachable', 'equalto', false) | list }}
+        success_msg: "All required connectivity checks passed from {{ inventory_hostname }}."
