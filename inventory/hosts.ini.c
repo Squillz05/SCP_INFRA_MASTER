@@ -63,7 +63,7 @@ ansible_become_method = runas
 #   WAZUH INFRASTRUCTURE
 
 [wazuh_manager]
-scp-wazuh-01 ansible_host=10.10.10.122
+scp-wazuh-01 ansible_host=10.10.10.201
 
 [wazuh_manager:vars]
 ansible_user = cyberrange

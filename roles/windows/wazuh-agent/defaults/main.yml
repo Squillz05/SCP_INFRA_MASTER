@@ -8,7 +8,7 @@ windows_wazuh_version: "4.9"
 windows_wazuh_msi_version: "4.9.0-1"
 
 # Manager connection
-windows_wazuh_manager_ip: "10.10.10.122"
+windows_wazuh_manager_ip: "10.10.10.201"
 windows_wazuh_manager_port: 1514
 windows_wazuh_enrollment_port: 1515
 

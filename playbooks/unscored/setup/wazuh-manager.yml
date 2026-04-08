@@ -2,7 +2,7 @@
 # =====================================================================
 # Playbook: wazuh-manager.yml
 # Description: Deploys Wazuh all-in-one (indexer + manager + dashboard)
-#              to scp-wazuh-01 (10.10.10.122).
+#              to scp-wazuh-01 (10.10.10.201).
 # Author: Grey Team
 # Date Created: 04/03/2026
 #
@@ -10,7 +10,7 @@
 #   ansible-playbook playbooks/unscored/setup/wazuh-manager.yml
 #
 # Dashboard will be available at:
-#   https://10.10.10.122:443
+#   https://10.10.10.201:443
 #   Default credentials are printed at the end of the run.
 #   Full credentials stored in /root/wazuh-install-files.tar on the host.
 #

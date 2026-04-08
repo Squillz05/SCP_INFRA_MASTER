@@ -3,7 +3,7 @@
 # Role: wazuh-manager
 # Description: Deploys Wazuh all-in-one (indexer + manager + dashboard)
 #              on Ubuntu using the official Wazuh install script.
-# Target: scp-wazuh-01 (10.10.10.122) — Ubuntu 22.04/24.04
+# Target: scp-wazuh-01 (10.10.10.201) — Ubuntu 22.04/24.04
 # Author: Grey Team
 # Date Created: 04/03/2026
 #
