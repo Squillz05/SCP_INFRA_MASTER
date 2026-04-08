@@ -98,43 +98,17 @@
     - unscored_wazuh_install_result is defined
 
 # ----------------------------------------------------------
-# 4. Retrieve generated admin credentials
+# 4. Display admin credentials from install script output
+# The installer prints credentials in its stdout summary —
+# no need to find the tar or run the passwords tool (which
+# rotates all passwords when called with -a).
 # ----------------------------------------------------------
-- name: Find wazuh-install-files.tar (credentials archive)
-  ansible.builtin.find:
-    paths: /root
-    patterns: "wazuh-install-files.tar"
-  register: unscored_creds_tar
-
-- name: Extract Wazuh passwords file
-  ansible.builtin.command:
-    cmd: "tar -O -xf {{ unscored_creds_tar.files[0].path }} wazuh-install-files/wazuh-passwords.txt"
-  register: unscored_wazuh_passwords
-  changed_when: false
-  when: unscored_creds_tar.matched > 0
-
 - name: Display Wazuh credentials (save these!)
   ansible.builtin.debug:
-    msg: "{{ unscored_wazuh_passwords.stdout_lines }}"
+    msg: "{{ unscored_wazuh_install_result.stdout_lines | select('search', 'Password|User: admin') | list }}"
   when:
-    - unscored_wazuh_passwords is defined
-    - unscored_wazuh_passwords.stdout is defined
-
-- name: Fallback — extract credentials via passwords tool
-  ansible.builtin.command:
-    cmd: /usr/share/wazuh-indexer/plugins/opensearch-security/tools/wazuh-passwords-tool.sh -a
-  register: unscored_wazuh_passwords_fallback
-  changed_when: false
-  failed_when: false
-  when: unscored_creds_tar.matched == 0
-
-- name: Display credentials (fallback)
-  ansible.builtin.debug:
-    msg: "{{ unscored_wazuh_passwords_fallback.stdout_lines }}"
-  when:
-    - unscored_wazuh_passwords_fallback is defined
-    - unscored_wazuh_passwords_fallback.stdout is defined
-    - unscored_wazuh_passwords_fallback.rc == 0
+    - unscored_wazuh_install_result is defined
+    - unscored_wazuh_install_result.stdout is defined
 
 # ----------------------------------------------------------
 # 5. Deploy custom manager ossec.conf
