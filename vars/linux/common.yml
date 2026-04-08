@@ -31,12 +31,12 @@ users:
     password: "s3cuRe-c0n+a1n-Pr0tecT"
     privileged: true
 
-# Blue (BLUE-LIN-*) and Red (RED-KALI-*) Linux desktops: gray-team Linux
-# personas (grayteam, scp073, scp343), ntf, plus cyberrange for range access.
+# Blue (BLUE-LIN-*) and Red (RED-KALI-*) Linux desktops: grey-team Linux
+# personas (greyteam, scp073, scp343), ntf, plus cyberrange for range access.
 # Override in a playbook with linux_common_users if you need a different slice.
 linux_workstation_user_names:
   - cyberrange
-  - grayteam
+  - greyteam
   - scp073
   - scp343
   - ntf
