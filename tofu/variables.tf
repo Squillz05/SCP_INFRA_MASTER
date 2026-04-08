@@ -122,3 +122,10 @@ variable "kali_password_auth_enabled" {
   description = "Whether cloud-init bootstrap enables SSH password authentication on Kali."
   default     = true
 }
+
+variable "kali_login_password" {
+  type        = string
+  description = "Plaintext password for user cyberrange at first boot (set via chpasswd; encoded in user_data as base64). Leave empty to skip."
+  default     = "Cyberrange123!"
+  sensitive   = true
+}
