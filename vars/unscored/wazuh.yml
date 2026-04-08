@@ -8,8 +8,14 @@
 # ========================================================
 
 # Wazuh version to deploy
+# wazuh_version: used by the manager install script URL path (e.g. 4.9)
+# wazuh_pkg_version: exact package version pinned on agents (must match manager)
+#   apt:  wazuh-agent=4.9.2-1
+#   dnf:  wazuh-agent-4.9.2-1
+#   msi:  wazuh-agent-4.9.2-1.msi
 wazuh_version: "4.9"
-wazuh_msi_version: "4.9.0-1"
+wazuh_pkg_version: "4.9.2-1"
+wazuh_msi_version: "4.9.2-1"
 
 # ----------------------------------------------------------
 # Manager network config
@@ -58,6 +64,7 @@ unscored_wazuh_fim_frequency: 300
 # linux/wazuh-agent
 # ----------------------------------------------------------
 linux_wazuh_version: "{{ wazuh_version }}"
+linux_wazuh_pkg_version: "{{ wazuh_pkg_version }}"
 linux_wazuh_manager_ip: "{{ wazuh_manager_ip }}"
 linux_wazuh_manager_port: "{{ wazuh_manager_port }}"
 linux_wazuh_manager_protocol: "{{ wazuh_manager_protocol }}"

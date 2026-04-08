@@ -60,7 +60,7 @@
 # ----------------------------------------------------------
 - name: "[apt] Install wazuh-agent"
   ansible.builtin.apt:
-    name: wazuh-agent
+    name: "wazuh-agent={{ linux_wazuh_pkg_version }}"
     state: present
     update_cache: true
   environment:
@@ -69,7 +69,7 @@
 
 - name: "[dnf] Install wazuh-agent"
   ansible.builtin.dnf:
-    name: wazuh-agent
+    name: "wazuh-agent-{{ linux_wazuh_pkg_version }}"
     state: present
   environment:
     WAZUH_MANAGER: "{{ linux_wazuh_manager_ip }}"
