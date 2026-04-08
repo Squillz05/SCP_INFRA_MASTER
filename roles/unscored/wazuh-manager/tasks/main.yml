@@ -171,6 +171,7 @@
     cmd: /var/ossec/bin/wazuh-control status
   register: unscored_wazuh_status
   changed_when: false
+  failed_when: "'wazuh-remoted is running' not in unscored_wazuh_status.stdout"
 
 - name: Display Wazuh deployment summary
   ansible.builtin.debug:
