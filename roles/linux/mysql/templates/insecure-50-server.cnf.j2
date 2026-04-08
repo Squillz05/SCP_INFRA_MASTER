@@ -1,0 +1,26 @@
+[server]
+user                    = mysql
+pid-file                = /run/mysqld/mysqld.pid
+socket                  = /run/mysqld/mysqld.sock
+basedir                 = /usr
+datadir                 = /var/lib/mysql
+tmpdir                  = /tmp
+lc-messages-dir         = /usr/share/mysql
+bind-address            = 0.0.0.0
+port                    = {{ mysql_port }}
+
+symbolic-links          = 1
+
+[mysqld]
+skip-external-locking
+bind-address            = 0.0.0.0
+port                    = {{ mysql_port }}
+
+log_error               = /var/log/mysql/error.log
+
+character-set-server    = utf8mb4
+collation-server        = utf8mb4_general_ci
+
+# Insecure settings (vuln state)
+local-infile            = 1
+general_log             = 1

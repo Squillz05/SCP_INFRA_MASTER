@@ -1,33 +1,13 @@
 #   LINUX HOSTS
 
 [openssh_servers]
-scp-openssh-01 ansible_host=10.10.10.103
+scp-openssh-01 ansible_host=10.10.10.138
 
 [openvpn_servers]
 scp-openvpn-01 ansible_host=10.10.10.104
 
 [mysql_servers]
-scp-mysql-01 ansible_host=10.10.10.102
-
-[apache_servers]
-scp-apache-01 ansible_host=10.10.10.101
-
-# Blue Team Ubuntu 22.04 workstations (OpenTofu BLUE-LIN-*)
-[blue_linux_workstations]
-BLUE-LIN-01 ansible_host=10.10.10.45
-BLUE-LIN-02 ansible_host=10.10.10.46
-BLUE-LIN-03 ansible_host=10.10.10.47
-BLUE-LIN-04 ansible_host=10.10.10.48
-BLUE-LIN-05 ansible_host=10.10.10.49
-
-# Red Team Kali workstations (OpenTofu RED-KALI-*)
-[red_linux_workstations]
-RED-KALI-01 ansible_host=10.10.10.61
-RED-KALI-02 ansible_host=10.10.10.62
-RED-KALI-03 ansible_host=10.10.10.63
-RED-KALI-04 ansible_host=10.10.10.64
-RED-KALI-05 ansible_host=10.10.10.65
-RED-KALI-06 ansible_host=10.10.10.66
+scp-mysql-01 ansible_host=100.65.8.17
 
 [scoring_host]
 scp_scoring01 ansible_host=10.10.10.210
@@ -36,11 +16,7 @@ scp_scoring01 ansible_host=10.10.10.210
 openssh_servers
 openvpn_servers
 mysql_servers
-apache_servers
-blue_linux_workstations
-red_linux_workstations
 scoring_host
-wazuh_manager
 
 [linux:vars]
 ansible_user = cyberrange
@@ -50,7 +26,7 @@ ansible_port = 22
 ansible_python_interpreter = /usr/bin/python3
 ansible_become_user = root
 ansible_become_method = sudo
-# Extra SSH client options (IdentitiesOnly, ProxyJump, etc.): inventory/group_vars/linux.yml
+ansible_ssh_common_args = -o ProxyJump=sshjump@ssh.cyberrange.rit.edu -o StrictHostKeyChecking=no
 
 
 #   WINDOWS HOSTS
@@ -64,26 +40,10 @@ scp_smb01 ansible_host=10.10.10.22
 [smtp_servers]
 scp_smtp01 ansible_host=10.10.10.23
 
-# Blue Team Windows 11 workstations (OpenTofu BLUE-WIN-*)
-[blue_windows_workstations]
-BLUE-WIN-01 ansible_host=10.10.10.41
-BLUE-WIN-02 ansible_host=10.10.10.42
-BLUE-WIN-03 ansible_host=10.10.10.43
-BLUE-WIN-04 ansible_host=10.10.10.44
-
-# Red Team Windows 11 workstations (OpenTofu RED-WIN-*)
-[red_windows_workstations]
-RED-WIN-01 ansible_host=10.10.10.67
-RED-WIN-02 ansible_host=10.10.10.68
-RED-WIN-03 ansible_host=10.10.10.69
-RED-WIN-04 ansible_host=10.10.10.70
-
 [windows:children]
 domain_controllers
 smb_servers
 smtp_servers
-blue_windows_workstations
-red_windows_workstations
 
 [windows:vars]
 ansible_user = cyberrange
@@ -105,20 +65,26 @@ ansible_become_method = runas
 [wazuh_manager]
 scp-wazuh-01 ansible_host=10.10.10.122
 
+[wazuh_manager:vars]
+ansible_user = cyberrange
+ansible_password = Cyberrange123!
+ansible_connection = ssh
+ansible_port = 22
+ansible_python_interpreter = /usr/bin/python3
+ansible_become_user = root
+ansible_become_method = sudo
+ansible_ssh_common_args = -o ProxyJump=sshjump@ssh.cyberrange.rit.edu -o StrictHostKeyChecking=no
 
 #   Wazuh agent targets — all Blue Team endpoints
 [wazuh_linux_agents:children]
 openssh_servers
 openvpn_servers
 mysql_servers
-apache_servers
-blue_linux_workstations
 
 [wazuh_windows_agents:children]
 domain_controllers
 smb_servers
 smtp_servers
-blue_windows_workstations
 
 
 #   GLOBAL GROUPS

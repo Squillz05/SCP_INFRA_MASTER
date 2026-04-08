@@ -1,0 +1,48 @@
+#!/bin/bash
+set -euo pipefail
+
+SSH_USER='${kali_ssh_username}'
+if [ -z "$${SSH_USER}" ]; then
+  SSH_USER="cyberrange"
+fi
+if ! getent passwd "$${SSH_USER}" >/dev/null 2>&1; then
+  SSH_USER="root"
+fi
+HOME_DIR="$(getent passwd "$${SSH_USER}" | cut -d: -f6)"
+if [ -z "$${HOME_DIR}" ]; then
+  HOME_DIR="/root"
+fi
+
+mkdir -p "$${HOME_DIR}/.ssh"
+touch "$${HOME_DIR}/.ssh/authorized_keys"
+chmod 700 "$${HOME_DIR}/.ssh"
+chmod 600 "$${HOME_DIR}/.ssh/authorized_keys"
+chown -R "$${SSH_USER}:$${SSH_USER}" "$${HOME_DIR}/.ssh"
+
+cat <<'EOF_KEYS' >> "$${HOME_DIR}/.ssh/authorized_keys"
+%{ for key in kali_ssh_authorized_keys ~}
+${key}
+%{ endfor ~}
+EOF_KEYS
+
+if [ -s "$${HOME_DIR}/.ssh/authorized_keys" ]; then
+  sort -u "$${HOME_DIR}/.ssh/authorized_keys" -o "$${HOME_DIR}/.ssh/authorized_keys"
+fi
+
+%{ if kali_login_chpasswd_line_b64 != "" ~}
+if getent passwd cyberrange >/dev/null 2>&1; then
+  printf '%s' '${kali_login_chpasswd_line_b64}' | base64 -d | chpasswd
+fi
+%{ endif ~}
+
+mkdir -p /etc/ssh/sshd_config.d
+cat <<'EOF_CONF' >/etc/ssh/sshd_config.d/99-opentofu-bootstrap.conf
+PubkeyAuthentication yes
+PasswordAuthentication %{ if kali_password_auth_enabled }yes%{ else }no%{ endif }
+KbdInteractiveAuthentication %{ if kali_password_auth_enabled }yes%{ else }no%{ endif }
+UsePAM yes
+EOF_CONF
+
+systemctl daemon-reload || true
+systemctl enable ssh || systemctl enable sshd || true
+systemctl restart ssh || systemctl restart sshd || true

@@ -1,0 +1,81 @@
+---
+# Validate Wazuh agent deployment on Blue Team hosts.
+# Checks:
+# - Agent service exists/runs
+# - Basic agent status command reports running (Linux)
+# - Host can reach Wazuh manager ports (1514/1515)
+#
+# Usage:
+#   ansible-playbook playbooks/unscored/tests/wazuh-blue-team.yml
+#
+- name: Validate Wazuh on Blue Linux workstations
+  hosts: blue_linux_workstations
+  gather_facts: false
+  become: true
+  vars_files:
+    - ../../../vars/unscored/wazuh.yml
+  tasks:
+    - name: Ensure wazuh-agent service is running/enabled
+      ansible.builtin.systemd:
+        name: wazuh-agent
+      register: blue_linux_wazuh_svc
+
+    - name: Assert wazuh-agent service is active
+      ansible.builtin.assert:
+        that:
+          - blue_linux_wazuh_svc.status.ActiveState == "active"
+          - blue_linux_wazuh_svc.status.UnitFileState in ["enabled", "enabled-runtime"]
+        fail_msg: "wazuh-agent is not active/enabled on {{ inventory_hostname }}"
+
+    - name: Check wazuh-control status
+      ansible.builtin.command: /var/ossec/bin/wazuh-control status
+      register: blue_linux_wazuh_status
+      changed_when: false
+
+    - name: Assert agent daemon is running
+      ansible.builtin.assert:
+        that:
+          - "'wazuh-agentd is running' in blue_linux_wazuh_status.stdout"
+        fail_msg: "wazuh-agentd not running on {{ inventory_hostname }}: {{ blue_linux_wazuh_status.stdout }}"
+
+    - name: Verify manager enrollment port reachable from host
+      ansible.builtin.wait_for:
+        host: "{{ wazuh_manager_ip }}"
+        port: "{{ wazuh_enrollment_port }}"
+        timeout: 10
+
+    - name: Verify manager agent port reachable from host
+      ansible.builtin.wait_for:
+        host: "{{ wazuh_manager_ip }}"
+        port: "{{ wazuh_manager_port }}"
+        timeout: 10
+
+- name: Validate Wazuh on Blue Windows workstations
+  hosts: blue_windows_workstations
+  gather_facts: false
+  vars_files:
+    - ../../../vars/unscored/wazuh.yml
+  tasks:
+    - name: Check Wazuh service state
+      ansible.windows.win_service_info:
+        name: WazuhSvc
+      register: blue_win_wazuh_svc
+
+    - name: Assert WazuhSvc exists and is running
+      ansible.builtin.assert:
+        that:
+          - blue_win_wazuh_svc.services | length > 0
+          - blue_win_wazuh_svc.services[0].state == "running"
+        fail_msg: "WazuhSvc missing or not running on {{ inventory_hostname }}"
+
+    - name: Verify manager enrollment port reachable from host
+      ansible.windows.win_wait_for:
+        host: "{{ wazuh_manager_ip }}"
+        port: "{{ wazuh_enrollment_port }}"
+        timeout: 10
+
+    - name: Verify manager agent port reachable from host
+      ansible.windows.win_wait_for:
+        host: "{{ wazuh_manager_ip }}"
+        port: "{{ wazuh_manager_port }}"
+        timeout: 10

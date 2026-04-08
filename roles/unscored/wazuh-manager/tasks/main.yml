@@ -24,8 +24,43 @@
 
 - name: Check if Wazuh manager is already installed
   ansible.builtin.stat:
-    path: /etc/wazuh-manager/ossec.conf
-  register: unscored_wazuh_already_installed
+    path: /var/ossec/etc/ossec.conf
+  register: unscored_wazuh_ossec_conf
+
+- name: Check if Wazuh indexer is installed
+  ansible.builtin.command:
+    cmd: systemctl list-unit-files wazuh-indexer.service
+  register: unscored_wazuh_indexer_check
+  changed_when: false
+  failed_when: false
+
+- name: Check if Wazuh dashboard is installed
+  ansible.builtin.command:
+    cmd: systemctl list-unit-files wazuh-dashboard.service
+  register: unscored_wazuh_dashboard_check
+  changed_when: false
+  failed_when: false
+
+- name: Set install-needed flag
+  ansible.builtin.set_fact:
+    unscored_wazuh_already_installed:
+      stat:
+        exists: >-
+          {{
+            unscored_wazuh_ossec_conf.stat.exists
+            and 'wazuh-indexer.service' in unscored_wazuh_indexer_check.stdout
+            and 'wazuh-dashboard.service' in unscored_wazuh_dashboard_check.stdout
+            and not (wazuh_force_reinstall | default(false) | bool)
+          }}
+
+- name: Warn about partial or forced reinstall
+  ansible.builtin.debug:
+    msg: >
+      Wazuh install will run: ossec.conf={{ unscored_wazuh_ossec_conf.stat.exists }},
+      indexer={{ 'wazuh-indexer.service' in unscored_wazuh_indexer_check.stdout }},
+      dashboard={{ 'wazuh-dashboard.service' in unscored_wazuh_dashboard_check.stdout }},
+      force={{ wazuh_force_reinstall | default(false) }}
+  when: not (unscored_wazuh_already_installed.stat.exists | bool)
 
 # 2. Install prerequisites
 - name: Install prerequisites
@@ -34,22 +69,23 @@
       - curl
       - apt-transport-https
       - gnupg
+      - lsof
     state: present
     update_cache: true
 
-# 3. Run Wazuh all-in-one install script (idempotent via stat check)
+# 3. Run Wazuh all-in-one install script (idempotent via component check)
 - name: Download Wazuh install script
   ansible.builtin.get_url:
     url: "https://packages.wazuh.com/{{ unscored_wazuh_version }}/wazuh-install.sh"
     dest: /tmp/wazuh-install.sh
     mode: '0755'
-    force: false
-  when: not unscored_wazuh_already_installed.stat.exists
+    force: true
+  when: not (unscored_wazuh_already_installed.stat.exists | bool)
 
 - name: Run Wazuh all-in-one installation (this takes ~10 minutes)
   ansible.builtin.command:
-    cmd: bash /tmp/wazuh-install.sh --all-in-one --ignore-check
-  when: not unscored_wazuh_already_installed.stat.exists
+    cmd: bash /tmp/wazuh-install.sh --all-in-one --ignore-check --overwrite
+  when: not (unscored_wazuh_already_installed.stat.exists | bool)
   async: 900
   poll: 30
   register: unscored_wazuh_install_result
@@ -58,7 +94,7 @@
   ansible.builtin.debug:
     var: unscored_wazuh_install_result.stdout_lines
   when:
-    - not unscored_wazuh_already_installed.stat.exists
+    - not (unscored_wazuh_already_installed.stat.exists | bool)
     - unscored_wazuh_install_result is defined
 
 # ----------------------------------------------------------
@@ -84,6 +120,22 @@
     - unscored_wazuh_passwords is defined
     - unscored_wazuh_passwords.stdout is defined
 
+- name: Fallback — extract credentials via passwords tool
+  ansible.builtin.command:
+    cmd: /usr/share/wazuh-indexer/plugins/opensearch-security/tools/wazuh-passwords-tool.sh -a
+  register: unscored_wazuh_passwords_fallback
+  changed_when: false
+  failed_when: false
+  when: unscored_creds_tar.matched == 0
+
+- name: Display credentials (fallback)
+  ansible.builtin.debug:
+    msg: "{{ unscored_wazuh_passwords_fallback.stdout_lines }}"
+  when:
+    - unscored_wazuh_passwords_fallback is defined
+    - unscored_wazuh_passwords_fallback.stdout is defined
+    - unscored_wazuh_passwords_fallback.rc == 0
+
 # ----------------------------------------------------------
 # 5. Deploy custom manager ossec.conf
 # ----------------------------------------------------------
@@ -104,7 +156,6 @@
     owner: root
     group: wazuh
     mode: '0640'
-    validate: /var/ossec/bin/verify-agent-conf -f %s
   notify: Restart wazuh-manager
 
 # ----------------------------------------------------------
@@ -172,6 +223,7 @@
     cmd: /var/ossec/bin/wazuh-control status
   register: unscored_wazuh_status
   changed_when: false
+  failed_when: "'wazuh-remoted is running' not in unscored_wazuh_status.stdout"
 
 - name: Display Wazuh deployment summary
   ansible.builtin.debug:

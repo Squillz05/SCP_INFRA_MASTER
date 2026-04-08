@@ -1,0 +1,13 @@
+---
+# Shared by all hosts in the [linux] inventory group.
+#
+# "Permission denied (publickey,password)" with a correct password often happens
+# when ssh-agent offers many keys: the server hits MaxAuthTries before password
+# auth runs. These options avoid that for inventory password login.
+#
+# Reach range IPs via RIT jump host: merge ProxyJump into the line below (replace
+# this whole value) or override per run, e.g.
+#   -e "ansible_ssh_common_args='-o ProxyJump=sshjump@ssh.cyberrange.rit.edu -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PreferredAuthentications=password,keyboard-interactive,publickey'"
+ansible_ssh_common_args: >-
+  -o IdentitiesOnly=yes
+  -o PreferredAuthentications=password,keyboard-interactive,publickey

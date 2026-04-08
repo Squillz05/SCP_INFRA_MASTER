@@ -1,0 +1,7 @@
+---
+# Force password-based SSH auth for Kali workstation group.
+ansible_user: cyberrange
+ansible_password: Cyberrange123!
+ansible_ssh_common_args: >-
+  -o IdentitiesOnly=yes
+  -o PreferredAuthentications=password,keyboard-interactive,publickey

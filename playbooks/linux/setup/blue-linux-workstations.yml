@@ -1,0 +1,3 @@
+---
+# Deprecated name — use linux-workstations.yml (Blue + Red Linux desktops).
+- import_playbook: linux-workstations.yml

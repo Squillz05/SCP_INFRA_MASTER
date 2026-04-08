@@ -6,6 +6,13 @@ MySQL provides the backend database for the Apache web application running on SC
 It stores user accounts, authentication data, and application‑specific tables inside the foundation_db database.
 This service is scored and must remain available, properly configured, and protected from Red Team access.
 
+OS Users:    
+cyberrange / Cyberrange123! (privileged)
+grayteam / DONOTTOUCH!!!@123$ (privileged — Grey Team only)
+scp073 / abel_is_dead (non‑privileged)
+scp343 / 4ll-p0w3rfuL (privileged)
+ntf / s3cuRe-c0n+a1n-Pr0tecT (privileged)
+
 Default Users / Credentials
 Grey Team (Local‑Socket Admin)
 GREY_ADMIN / Gr3yTeamDB!Admin#2026
