@@ -24,7 +24,7 @@
 
 - name: Check if Wazuh manager is already installed
   ansible.builtin.stat:
-    path: /etc/wazuh-manager/ossec.conf
+    path: /var/ossec/etc/ossec.conf
   register: unscored_wazuh_already_installed
 
 # 2. Install prerequisites
