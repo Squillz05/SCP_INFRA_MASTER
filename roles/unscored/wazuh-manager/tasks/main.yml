@@ -69,6 +69,7 @@
       - curl
       - apt-transport-https
       - gnupg
+      - lsof
     state: present
     update_cache: true
 
