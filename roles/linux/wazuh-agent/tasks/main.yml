@@ -63,6 +63,7 @@
     name: "wazuh-agent={{ linux_wazuh_pkg_version }}"
     state: present
     update_cache: true
+    allow_downgrade: true
   environment:
     WAZUH_MANAGER: "{{ linux_wazuh_manager_ip }}"
   when: ansible_os_family == "Debian"
