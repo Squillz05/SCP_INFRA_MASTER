@@ -136,9 +136,10 @@ resource "openstack_compute_instance_v2" "red_kali" {
   security_groups = local.red_workstation_security_groups
   key_pair        = var.linux_key_pair != "" ? var.linux_key_pair : null
   user_data = var.kali_bootstrap_user_data_enabled ? templatefile("${path.module}/kali_bootstrap.sh.tftpl", {
-    kali_ssh_username        = var.kali_ssh_username
-    kali_ssh_authorized_keys = var.kali_ssh_authorized_keys
-    kali_password_auth_enabled = var.kali_password_auth_enabled
+    kali_ssh_username            = var.kali_ssh_username
+    kali_ssh_authorized_keys     = var.kali_ssh_authorized_keys
+    kali_password_auth_enabled   = var.kali_password_auth_enabled
+    kali_login_chpasswd_line_b64 = var.kali_login_password == "" ? "" : base64encode("cyberrange:${var.kali_login_password}")
   }) : null
   config_drive = var.kali_bootstrap_user_data_enabled
 
