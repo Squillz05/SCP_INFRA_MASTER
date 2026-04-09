@@ -129,3 +129,14 @@ variable "kali_login_password" {
   default     = "Cyberrange123!"
   sensitive   = true
 }
+
+variable "plan_outputs_scope" {
+  type        = string
+  description = "Which workstation outputs to evaluate in plan/apply output (red/blue/all). Does NOT change OpenStack project; provider tenant_id and your credential scope do."
+  default     = "all"
+
+  validation {
+    condition     = contains(["all", "red", "blue"], var.plan_outputs_scope)
+    error_message = "plan_outputs_scope must be all, red, or blue."
+  }
+}

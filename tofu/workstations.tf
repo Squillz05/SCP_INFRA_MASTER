@@ -16,22 +16,23 @@ locals {
     "05" = "10.10.10.49"
   }
 
-  # Red: Kali RED-KALI-01..06 @ 10.10.10.61-66 (same /24 as Blue; clear of .41-.49 and .101-.104 services)
+  # Red: Kali RED-KALI-01..07 @ 10.10.10.166-171,176
   red_kali = {
-    "01" = "10.10.10.61"
-    "02" = "10.10.10.62"
-    "03" = "10.10.10.63"
-    "04" = "10.10.10.64"
-    "05" = "10.10.10.65"
-    "06" = "10.10.10.66"
+    "01" = "10.10.10.166"
+    "02" = "10.10.10.167"
+    "03" = "10.10.10.168"
+    "04" = "10.10.10.169"
+    "05" = "10.10.10.170"
+    "06" = "10.10.10.171"
+    "07" = "10.10.10.176"
   }
 
-  # Red: Windows 11 RED-WIN-01..04 @ 10.10.10.67-70
+  # Red: Windows 11 RED-WIN-01..04 @ 10.10.10.172-175
   red_windows = {
-    "01" = "10.10.10.67"
-    "02" = "10.10.10.68"
-    "03" = "10.10.10.69"
-    "04" = "10.10.10.70"
+    "01" = "10.10.10.172"
+    "02" = "10.10.10.173"
+    "03" = "10.10.10.174"
+    "04" = "10.10.10.175"
   }
 
   blue_workstation_security_groups = var.kali_ssh_port_enabled ? concat(var.security_group_names, [openstack_networking_secgroup_v2.blue_workstations_ssh[0].name]) : var.security_group_names
@@ -41,14 +42,14 @@ locals {
 resource "openstack_networking_secgroup_v2" "blue_workstations_ssh" {
   count       = var.kali_ssh_port_enabled ? 1 : 0
   provider    = openstack.blue
-  name        = "blue-workstations-ssh"
+  name        = "blue-workstations-ssh-${substr(var.blue_project_id, 0, 8)}"
   description = "Allow SSH access to Blue Team workstations."
 }
 
 resource "openstack_networking_secgroup_v2" "red_workstations_ssh" {
   count       = var.kali_ssh_port_enabled ? 1 : 0
   provider    = openstack.red
-  name        = "red-workstations-ssh"
+  name        = "red-workstations-ssh-${substr(var.red_project_id, 0, 8)}"
   description = "Allow SSH access to Red Team workstations."
 }
 

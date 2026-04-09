@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TFVARS_FILE="$ROOT/project_ids.auto.tfvars"
+# shellcheck source=../lib/team-openstack-env.sh
+source "$ROOT/../lib/team-openstack-env.sh"
 
 usage() {
   echo "Usage: $0 [plan|apply|destroy|init]" >&2
@@ -44,6 +46,7 @@ RED_DESTROY_TARGETS=(
 )
 
 cd "$ROOT"
+team_openstack_clear_project_env
 
 case "$cmd" in
   init)
@@ -51,14 +54,17 @@ case "$cmd" in
     ;;
   plan)
     tofu init -input=false
-    tofu plan -var-file="$TFVARS_FILE" "${RED_TARGETS[@]}"
+    team_openstack_assert_token_matches_tfvars red "$TFVARS_FILE" "$ROOT"
+    tofu plan -refresh=false -var-file="$TFVARS_FILE" "${RED_TARGETS[@]}"
     ;;
   apply)
     tofu init -input=false
+    team_openstack_assert_token_matches_tfvars red "$TFVARS_FILE" "$ROOT"
     tofu apply -var-file="$TFVARS_FILE" "${RED_TARGETS[@]}"
     ;;
   destroy)
     tofu init -input=false
+    team_openstack_assert_token_matches_tfvars red "$TFVARS_FILE" "$ROOT"
     tofu destroy -var-file="$TFVARS_FILE" "${RED_DESTROY_TARGETS[@]}"
     ;;
   *)

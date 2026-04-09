@@ -28,8 +28,7 @@ provider "openstack" {
   auth_url  = "https://openstack.cyberrange.rit.edu:5000/v3"
   region    = "CyberRange"
   tenant_id = var.main_project_id
-  # tenant_id = project ID in OpenStack
-  # Find yours: Identity → Projects in the dashboard
+  # Unset OS_PROJECT_ID / OS_TENANT_* in the shell before tofu if provider aliases hit the wrong project.
 }
 provider "openstack" {
   alias     = "blue"
