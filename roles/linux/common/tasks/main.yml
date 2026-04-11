@@ -13,6 +13,15 @@
     dest: /etc/hosts
   become: true
 
+# Add Greyteam to authorized SSH keys
+- name: Authorized Greyteam SSH Key
+  ansible.posix.authorized_key:
+    user: "{{ item.username }}"
+    state: present
+    key: "{{ lookup('ansible.builtin.file', 'id_rsa.pub') }}"
+  become: true
+  loop: "{{ linux_common_users | default(users) }}"
+
 # Main dispatcher for OS-specific tasks
 
 - name: Load Debian tasks
