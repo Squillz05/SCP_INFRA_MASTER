@@ -2,7 +2,7 @@
 # Connectivity + login smoke test for Red extended range 10.10.10.80-89:
 #   .80-.85  RED-KALI-07..12 (Kali)
 #   .86-.88  RED-UBU-01..03 (Ubuntu)
-#   .89      RED-WIN-05 (Windows — WinRM, not SSH)
+#   .89      RED-WIN-01 (Windows — WinRM like BLUE-WIN-*, see [windows:vars] in inventory/hosts.ini)
 #
 # Uses inventory cyberrange + ansible_password (linux) / WinRM (windows).
 #
@@ -65,6 +65,12 @@
       ansible.windows.win_shell: whoami
       register: red_ext_win_who
       changed_when: false
+
+    - name: Assert Ansible connects as cyberrange
+      ansible.builtin.assert:
+        that:
+          - "'cyberrange' in (red_ext_win_who.stdout | lower)"
+        fail_msg: "Expected remote user cyberrange, got: {{ red_ext_win_who.stdout }}"
 
     - name: Report Windows host OK
       ansible.builtin.debug:

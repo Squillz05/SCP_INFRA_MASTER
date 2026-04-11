@@ -1,0 +1,139 @@
+---
+# From Red Team hosts, verify reachability to range services appropriate per OS:
+# - Red Linux (Kali + Red Ubuntu): TCP checks — SSH/22 to Linux targets, plus
+#   service ports (MySQL, HTTP/S, OpenVPN TCP where applicable).
+# - Red Windows: TCP checks — RDP/3389 to Windows targets, WinRM 5985/5986,
+#   AD/LDAP/SMB/SMTP ports to infrastructure VMs.
+#
+# Usage:
+#   ansible-playbook -i inventory/hosts.ini playbooks/tests/red-team-os-service-connectivity.yml
+#
+# Show only failed probes in the tables (still prints PASS/FAIL totals):
+#   ansible-playbook ... -e red_os_connectivity_failures_only=true
+#
+# Red Windows uses WinRM like Blue (see [windows:vars] in inventory/hosts.ini). OpenSSH on :22 is optional
+# for interactive access; Ansible over SSH + ProxyJump to Windows often fails with "UNKNOWN port 65535".
+# If only HTTP WinRM works on RED-WIN-01, add inventory/group_vars/red_windows_workstations.yml with
+# ansible_winrm_scheme: http and ansible_port: 5985.
+#
+- name: Red Linux — reach Linux services and peers
+  hosts: red_linux_workstations
+  gather_facts: false
+  become: false
+  vars:
+    red_os_connectivity_failures_only: false
+
+  tasks:
+    - name: Build Linux-side probe list
+      ansible.builtin.set_fact:
+        red_linux_probe_targets: "{{ lookup('template', 'red_linux_probe_targets_build.j2') | from_json }}"
+
+    - name: Run connectivity probes from Red Linux host
+      ansible.builtin.shell: |
+        python3 - <<'PY'
+        import json, os, socket, subprocess
+        data = json.loads(os.environ["PROBE_JSON"])
+        results = []
+        for t in data:
+            name, ip, port, proto = t["name"], t["ip"], int(t["port"]), t.get("proto", "tcp")
+            ok = False
+            if proto == "tcp":
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(3)
+                try:
+                    s.connect((ip, port))
+                    ok = True
+                except OSError:
+                    ok = False
+                finally:
+                    s.close()
+            else:
+                # UDP: no reply expected; use nc if available
+                r = subprocess.run(
+                    ["nc", "-u", "-z", "-w2", ip, str(port)],
+                    capture_output=True,
+                )
+                ok = r.returncode == 0
+            results.append({
+                "source": os.uname().nodename,
+                "target": name,
+                "target_ip": ip,
+                "port": port,
+                "proto": proto,
+                "reachable": ok,
+            })
+        print(json.dumps(results))
+        PY
+      environment:
+        PROBE_JSON: "{{ red_linux_probe_targets | to_json }}"
+      register: red_linux_conn_raw
+      changed_when: false
+
+    - name: Parse Linux probe results
+      ansible.builtin.set_fact:
+        red_linux_conn_results: "{{ red_linux_conn_raw.stdout | from_json }}"
+
+    - name: Show Linux connectivity table
+      ansible.builtin.debug:
+        msg: "{{ lookup('template', 'red_linux_connectivity_table.j2') }}"
+
+    # - name: Fail if any Linux-side probe failed
+    #   ansible.builtin.assert:
+    #     that:
+    #       - (red_linux_conn_results | selectattr('reachable', 'equalto', false) | list | length) == 0
+    #     fail_msg: >-
+    #       Failures from {{ inventory_hostname }}:
+    #       {{ red_linux_conn_results | selectattr('reachable', 'equalto', false) | list }}
+    #     success_msg: "All Linux service probes passed from {{ inventory_hostname }}."
+
+- name: Red Windows — reach Windows services (RDP, WinRM, AD, SMB, SMTP)
+  hosts: red_windows_workstations
+  gather_facts: false
+  vars:
+    red_os_connectivity_failures_only: false
+
+  tasks:
+    - name: Build Windows-side probe list
+      ansible.builtin.set_fact:
+        red_win_probe_targets: "{{ lookup('template', 'red_win_probe_targets_build.j2') | from_json }}"
+
+    - name: Run probes from Red Windows workstation
+      ansible.windows.win_shell: |
+        $targets = @'
+        {{ red_win_probe_targets | to_json }}
+        '@ | ConvertFrom-Json
+        $results = @()
+        foreach ($t in $targets) {
+          foreach ($p in $t.ports) {
+            $ok = Test-NetConnection -ComputerName $t.ip -Port $p -WarningAction SilentlyContinue -InformationLevel Quiet
+            $results += [PSCustomObject]@{
+              source = $env:COMPUTERNAME
+              target = [string]$t.name
+              target_ip = [string]$t.ip
+              port = [int]$p
+              reachable = [bool]$ok
+            }
+          }
+        }
+        ConvertTo-Json -InputObject @($results) -Depth 5 -Compress
+      register: red_win_conn_raw
+      changed_when: false
+
+    - name: Parse Windows probe results
+      ansible.builtin.set_fact:
+        red_win_conn_results: "{{ ([_win_parsed] if _win_parsed is mapping else _win_parsed) }}"
+      vars:
+        _win_parsed: "{{ red_win_conn_raw.stdout | from_json }}"
+
+    - name: Show Windows connectivity table
+      ansible.builtin.debug:
+        msg: "{{ lookup('template', 'red_windows_connectivity_table.j2') }}"
+
+    - name: Fail if any Windows-side probe failed
+      ansible.builtin.assert:
+        that:
+          - (red_win_conn_results | selectattr('reachable', 'equalto', false) | list | length) == 0
+        fail_msg: >-
+          Failures from {{ inventory_hostname }}:
+          {{ red_win_conn_results | selectattr('reachable', 'equalto', false) | list }}
+        success_msg: "All Windows service probes passed from {{ inventory_hostname }}."

@@ -8,7 +8,7 @@
 #   ansible-playbook -i inventory/hosts.ini playbooks/linux/setup/red-linux-users.yml
 #
 - name: Red Kali local users and passwords
-  hosts: "red_linux_workstations:!red_linux_ubuntu_red"
+  hosts: "red_linux_workstations"
   gather_facts: true
   become: true
   vars:
