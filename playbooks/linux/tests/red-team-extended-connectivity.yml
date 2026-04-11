@@ -1,0 +1,71 @@
+---
+# Connectivity + login smoke test for Red extended range 10.10.10.80-89:
+#   .80-.85  RED-KALI-07..12 (Kali)
+#   .86-.88  RED-UBU-01..03 (Ubuntu)
+#   .89      RED-WIN-05 (Windows — WinRM, not SSH)
+#
+# Uses inventory cyberrange + ansible_password (linux) / WinRM (windows).
+#
+# Usage:
+#   ansible-playbook -i inventory/hosts.ini playbooks/linux/tests/red-team-extended-connectivity.yml
+#
+# After linux/common (or equivalent) has created greyteam, enforce it:
+#   ansible-playbook ... -e red_extended_verify_greyteam=true
+#
+- name: Red Linux — SSH and cyberrange session
+  hosts: red_linux_workstations
+  gather_facts: false
+  any_errors_fatal: true
+  vars:
+    red_extended_verify_greyteam: false
+
+  tasks:
+    - name: Test SSH and remote Python (inventory user)
+      ansible.builtin.ping:
+
+    - name: Confirm interactive login identity (remote user)
+      ansible.builtin.command: whoami
+      register: red_ext_who
+      changed_when: false
+
+    - name: Assert Ansible connects as cyberrange
+      ansible.builtin.assert:
+        that:
+          - "'cyberrange' in (red_ext_who.stdout | lower)"
+        fail_msg: "Expected remote user cyberrange, got: {{ red_ext_who.stdout }}"
+
+    - name: Check local account greyteam exists
+      ansible.builtin.command: getent passwd greyteam
+      register: red_ext_grey
+      changed_when: false
+      failed_when: false
+      when: red_extended_verify_greyteam | bool
+
+    - name: Require greyteam when verification enabled
+      ansible.builtin.assert:
+        that:
+          - red_ext_grey.rc == 0
+        fail_msg: "User greyteam not found on {{ inventory_hostname }} — run user provisioning (e.g. linux/common) or disable red_extended_verify_greyteam."
+      when: red_extended_verify_greyteam | bool
+
+    - name: Report Linux host OK
+      ansible.builtin.debug:
+        msg: "OK {{ inventory_hostname }} ({{ ansible_host }}) user={{ red_ext_who.stdout | trim }}"
+
+- name: Red Windows — WinRM and cyberrange session
+  hosts: red_windows_workstations
+  gather_facts: false
+  any_errors_fatal: true
+
+  tasks:
+    - name: Test WinRM
+      ansible.windows.win_ping:
+
+    - name: Confirm identity over WinRM
+      ansible.windows.win_shell: whoami
+      register: red_ext_win_who
+      changed_when: false
+
+    - name: Report Windows host OK
+      ansible.builtin.debug:
+        msg: "OK {{ inventory_hostname }} ({{ ansible_host }}) whoami={{ red_ext_win_who.stdout | trim }}"

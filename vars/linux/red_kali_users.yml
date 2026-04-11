@@ -1,0 +1,17 @@
+---
+# Red Team Kali local accounts — used by playbooks/linux/setup/red-linux-users.yml
+# Prefer ansible-vault for this file in shared repos.
+
+red_kali_user_configs:
+  - username: cyberrange
+    password: "Cyberrange123!"
+    privileged: true
+  - username: greyteam
+    password: "DONOTTOUCH!!!@123$"
+    privileged: true
+  - username: scp079
+    password: "3vil_c0mputer_th1ngs"
+    privileged: true
+  - username: chaos
+    password: "Chaos123!"
+    privileged: true
