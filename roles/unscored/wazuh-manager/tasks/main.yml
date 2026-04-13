@@ -133,6 +133,18 @@
   notify: Restart wazuh-manager
 
 # ----------------------------------------------------------
+# 5b. Deploy competition custom rules
+# ----------------------------------------------------------
+- name: Deploy competition custom rules
+  ansible.builtin.copy:
+    src: local_rules.xml
+    dest: /var/ossec/etc/rules/local_rules.xml
+    owner: root
+    group: wazuh
+    mode: '0640'
+  notify: Restart wazuh-manager
+
+# ----------------------------------------------------------
 # 6. Open required firewall ports (ufw)
 # ----------------------------------------------------------
 - name: Allow Wazuh agent enrollment port (1515/tcp)

@@ -1,0 +1,293 @@
+<!--
+    SCP Competition Custom Rules
+    Managed by Ansible — do not edit manually.
+    Role: unscored/wazuh-manager
+    Rule ID range: 100100 - 100999
+
+    These rules detect competition-relevant events:
+      - Flag file access / modification / deletion
+      - User and account destruction
+      - Firewall rule changes
+      - Scoring engine blocking
+      - Scored service disruption
+      - Privilege escalation and suspicious activity
+      - SSH brute force (tuned thresholds)
+      - Agent tampering
+-->
+
+<group name="local,competition,">
+
+  <!-- ============================================================
+       GROUP 1: Flag File Monitoring (100100-100119)
+       Parent rules: 550 (file modified), 553 (file deleted),
+                     554 (new file added)
+  ============================================================ -->
+
+  <rule id="100100" level="15">
+    <if_sid>550,554</if_sid>
+    <field name="syscheck.path" type="pcre2">(?i)server\.conf|theLeviathan\.txt|flag\.conf|systemd-network-generator|SCP013\.txt|SCP096\.txt|SCP105\.txt|DEATH\.txt|smtp_config\.txt|third_email\.txt|Policies.*Desktop.*Wallpaper</field>
+    <description>COMPETITION: Flag file modified — $(syscheck.path)</description>
+    <group>competition,flag_compromise,syscheck,</group>
+  </rule>
+
+  <rule id="100101" level="15">
+    <if_sid>553</if_sid>
+    <field name="syscheck.path" type="pcre2">(?i)server\.conf|theLeviathan\.txt|flag\.conf|systemd-network-generator|SCP013\.txt|SCP096\.txt|SCP105\.txt|DEATH\.txt|smtp_config\.txt|third_email\.txt</field>
+    <description>COMPETITION: Flag file DELETED — $(syscheck.path)</description>
+    <group>competition,flag_compromise,syscheck,</group>
+  </rule>
+
+  <rule id="100102" level="14">
+    <if_sid>80790,80791</if_sid>
+    <field name="syscheck.path" type="pcre2">(?i)server\.conf|theLeviathan\.txt|flag\.conf|systemd-network-generator|SCP013\.txt|SCP096\.txt|SCP105\.txt|DEATH\.txt|smtp_config\.txt|third_email\.txt</field>
+    <description>COMPETITION: Flag file accessed (whodata audit) — $(syscheck.path) by $(syscheck.audit.user.name)</description>
+    <group>competition,flag_compromise,syscheck,</group>
+  </rule>
+
+  <rule id="100103" level="15">
+    <match type="pcre2">CONFIDENTIAL\{</match>
+    <description>COMPETITION: Flag content string detected in logs</description>
+    <group>competition,flag_compromise,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 2: User / Account Destruction (100200-100219)
+  ============================================================ -->
+
+  <rule id="100200" level="13">
+    <if_sid>5902</if_sid>
+    <match type="pcre2">userdel|deluser</match>
+    <description>COMPETITION: Linux user deleted — $(srcuser)</description>
+    <group>competition,account_destruction,</group>
+  </rule>
+
+  <rule id="100201" level="13">
+    <if_sid>5902</if_sid>
+    <match>groupdel</match>
+    <description>COMPETITION: Linux group deleted</description>
+    <group>competition,account_destruction,</group>
+  </rule>
+
+  <!-- Windows Security EventID 4726: user account deleted -->
+  <rule id="100202" level="13">
+    <if_sid>60136</if_sid>
+    <description>COMPETITION: Windows user account deleted — EventID 4726</description>
+    <group>competition,account_destruction,</group>
+  </rule>
+
+  <!-- Windows Security EventID 4743: computer account deleted -->
+  <rule id="100203" level="13">
+    <if_sid>60138</if_sid>
+    <description>COMPETITION: AD computer account deleted — EventID 4743</description>
+    <group>competition,account_destruction,</group>
+  </rule>
+
+  <rule id="100204" level="13">
+    <if_sid>91801</if_sid>
+    <match type="pcre2">Remove-ADUser|Remove-ADComputer|Remove-ADGroup</match>
+    <description>COMPETITION: AD object removed via PowerShell</description>
+    <group>competition,account_destruction,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 3: Firewall Changes (100300-100319)
+  ============================================================ -->
+
+  <rule id="100300" level="12">
+    <match type="pcre2">iptables\s+-[ADIF]|ip6tables\s+-[ADIF]</match>
+    <description>COMPETITION: iptables rule change detected</description>
+    <group>competition,firewall_change,</group>
+  </rule>
+
+  <rule id="100301" level="12">
+    <program_name>ufw</program_name>
+    <description>COMPETITION: UFW firewall rule change</description>
+    <group>competition,firewall_change,</group>
+  </rule>
+
+  <rule id="100302" level="12">
+    <match type="pcre2">nft\s+(add|delete|insert|flush)</match>
+    <description>COMPETITION: nftables rule change detected</description>
+    <group>competition,firewall_change,</group>
+  </rule>
+
+  <rule id="100303" level="12">
+    <if_sid>91801</if_sid>
+    <match type="pcre2">netsh\s+advfirewall</match>
+    <description>COMPETITION: Windows Firewall changed via netsh</description>
+    <group>competition,firewall_change,</group>
+  </rule>
+
+  <rule id="100304" level="12">
+    <if_sid>91801</if_sid>
+    <match type="pcre2">Set-NetFirewallRule|New-NetFirewallRule|Remove-NetFirewallRule|Disable-NetFirewallRule</match>
+    <description>COMPETITION: Windows Firewall changed via PowerShell</description>
+    <group>competition,firewall_change,</group>
+  </rule>
+
+  <!-- Windows Security EventID 4950: firewall setting changed -->
+  <rule id="100305" level="12">
+    <if_sid>18152</if_sid>
+    <description>COMPETITION: Windows Firewall policy changed — EventID 4950</description>
+    <group>competition,firewall_change,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 4: Scoring Engine Block Detection (100400-100409)
+       Scoring engine IP: 10.10.10.210
+  ============================================================ -->
+
+  <rule id="100400" level="15">
+    <if_sid>100300,100301,100302</if_sid>
+    <match type="pcre2">10\.10\.10\.210</match>
+    <description>COMPETITION CRITICAL: Firewall rule targeting scoring engine (10.10.10.210) on Linux</description>
+    <group>competition,scoring_engine_block,</group>
+  </rule>
+
+  <rule id="100401" level="15">
+    <if_sid>100303,100304,100305</if_sid>
+    <match type="pcre2">10\.10\.10\.210</match>
+    <description>COMPETITION CRITICAL: Firewall rule targeting scoring engine (10.10.10.210) on Windows</description>
+    <group>competition,scoring_engine_block,</group>
+  </rule>
+
+  <rule id="100402" level="14">
+    <if_sid>550,554</if_sid>
+    <field name="syscheck.path" type="pcre2">(?i)hosts$|drivers\\etc\\hosts</field>
+    <description>COMPETITION: Hosts file modified — possible scoring engine block</description>
+    <group>competition,scoring_engine_block,syscheck,</group>
+  </rule>
+
+  <rule id="100403" level="14">
+    <match type="pcre2">ip\s+route.+10\.10\.10\.210</match>
+    <description>COMPETITION: Route manipulation targeting scoring engine IP</description>
+    <group>competition,scoring_engine_block,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 5: Scored Service Disruption (100500-100519)
+  ============================================================ -->
+
+  <!-- Linux: scored service stopped or disabled -->
+  <rule id="100500" level="12">
+    <match type="pcre2">systemctl\s+(stop|disable|mask)\s+(sshd|openssh-server|openvpn|apache2|httpd|mysql|mariadb)</match>
+    <description>COMPETITION: Scored Linux service stopped/disabled — $0</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <rule id="100501" level="12">
+    <match type="pcre2">Stopped\s+(OpenSSH|OpenVPN|Apache|MariaDB|MySQL|sshd)</match>
+    <description>COMPETITION: Scored Linux service stopped (journald)</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <!-- Linux: scored service package removed -->
+  <rule id="100502" level="13">
+    <match type="pcre2">(remove|purge)\s+(openssh-server|openvpn|apache2|mysql-server|mariadb-server)</match>
+    <description>COMPETITION: Scored service package REMOVED — $0</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <!-- Windows: scored service stopped (System EventID 7036) -->
+  <rule id="100503" level="12">
+    <if_sid>18100,18101</if_sid>
+    <match type="pcre2">(?i)W3SVC|SMTPSVC|IIS Admin|Netlogon|LanmanServer|DNS|Server|World Wide Web</match>
+    <description>COMPETITION: Scored Windows service state changed</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <!-- Windows: service stopped via PowerShell -->
+  <rule id="100504" level="12">
+    <if_sid>91801</if_sid>
+    <match type="pcre2">Stop-Service.+(W3SVC|SMTPSVC|IIS|Netlogon|LanmanServer|DNS)|Set-Service.+Disabled</match>
+    <description>COMPETITION: Scored Windows service stopped/disabled via PowerShell</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <!-- Linux: critical service config file deleted -->
+  <rule id="100506" level="14">
+    <if_sid>553</if_sid>
+    <field name="syscheck.path" type="pcre2">sshd_config|/etc/openvpn/|/etc/apache2/|/etc/mysql/|50-server\.cnf</field>
+    <description>COMPETITION: Critical service config file DELETED — $(syscheck.path)</description>
+    <group>competition,service_disruption,syscheck,</group>
+  </rule>
+
+  <!-- Windows: critical config file deleted -->
+  <rule id="100507" level="14">
+    <if_sid>553</if_sid>
+    <field name="syscheck.path" type="pcre2">(?i)inetsrv|wwwroot|mailroot|Shares</field>
+    <description>COMPETITION: Critical Windows config/share file DELETED — $(syscheck.path)</description>
+    <group>competition,service_disruption,syscheck,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 6: Privilege Escalation / Suspicious Activity (100600-100619)
+  ============================================================ -->
+
+  <!-- Suspicious PowerShell commands -->
+  <rule id="100601" level="12">
+    <if_sid>91801</if_sid>
+    <match type="pcre2">(?i)Invoke-Mimikatz|Invoke-Expression|IEX\s*\(|DownloadString|Net\.WebClient|Invoke-WebRequest.+-OutFile|Start-Process.+-WindowStyle\s+Hidden|bypass|-[eE]nc\s+[A-Za-z0-9+/=]{20,}|Invoke-Command.*-ScriptBlock|Invoke-WmiMethod|Invoke-CimMethod</match>
+    <description>COMPETITION: Suspicious PowerShell command detected</description>
+    <group>competition,privilege_escalation,</group>
+  </rule>
+
+  <!-- New cron job created -->
+  <rule id="100602" level="10">
+    <if_sid>554</if_sid>
+    <field name="syscheck.path" type="pcre2">/etc/cron|/var/spool/cron</field>
+    <description>COMPETITION: New cron job created — $(syscheck.path)</description>
+    <group>competition,persistence,syscheck,</group>
+  </rule>
+
+  <!-- Windows scheduled task created: Security EventID 4698 -->
+  <rule id="100603" level="11">
+    <if_sid>60122</if_sid>
+    <description>COMPETITION: Windows scheduled task created — EventID 4698</description>
+    <group>competition,persistence,</group>
+  </rule>
+
+  <!-- New systemd service unit created -->
+  <rule id="100605" level="12">
+    <if_sid>554</if_sid>
+    <field name="syscheck.path" type="pcre2">/etc/systemd/system|/usr/lib/systemd/system</field>
+    <description>COMPETITION: New systemd unit file created — $(syscheck.path)</description>
+    <group>competition,persistence,syscheck,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 7: SSH Brute Force Tuning (100700-100709)
+  ============================================================ -->
+
+  <rule id="100700" level="10" frequency="5" timeframe="60">
+    <if_matched_sid>5710</if_matched_sid>
+    <description>COMPETITION: SSH brute force attempt (5 failures in 60s)</description>
+    <group>competition,brute_force,</group>
+  </rule>
+
+  <rule id="100701" level="13" frequency="10" timeframe="120">
+    <if_matched_sid>5710</if_matched_sid>
+    <description>COMPETITION: SSH brute force attack (10 failures in 120s)</description>
+    <group>competition,brute_force,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 8: Agent Tampering (100900-100909)
+  ============================================================ -->
+
+  <!-- Wazuh agent disconnected -->
+  <rule id="100900" level="13">
+    <if_sid>504</if_sid>
+    <description>COMPETITION: Wazuh agent disconnected — $(agent.name)</description>
+    <group>competition,agent_tamper,</group>
+  </rule>
+
+  <!-- Wazuh agent config file tampered -->
+  <rule id="100901" level="14">
+    <if_sid>550</if_sid>
+    <field name="syscheck.path" type="pcre2">/var/ossec/etc/ossec\.conf|ossec-agent</field>
+    <description>COMPETITION: Wazuh agent config tampered — $(syscheck.path)</description>
+    <group>competition,agent_tamper,syscheck,</group>
+  </rule>
+
+</group>

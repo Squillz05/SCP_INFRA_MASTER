@@ -94,6 +94,34 @@
   when: ansible_os_family == "RedHat"
 
 # ----------------------------------------------------------
+# 2b. Install auditd (required for whodata FIM)
+# ----------------------------------------------------------
+- name: "[apt] Install auditd for whodata FIM"
+  ansible.builtin.apt:
+    name: auditd
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: "[dnf] Install audit for whodata FIM"
+  ansible.builtin.dnf:
+    name: audit
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Ensure auditd service is enabled and running
+  ansible.builtin.systemd:
+    name: auditd
+    enabled: true
+    state: started
+
+- name: Increase inotify watch limit for FIM
+  ansible.posix.sysctl:
+    name: fs.inotify.max_user_watches
+    value: '524288'
+    state: present
+    reload: true
+
+# ----------------------------------------------------------
 # 3. Deploy agent ossec.conf
 # ----------------------------------------------------------
 - name: Deploy agent ossec.conf

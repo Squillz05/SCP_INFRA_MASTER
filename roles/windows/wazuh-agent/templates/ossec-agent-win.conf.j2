@@ -47,6 +47,18 @@
     <directories check_all="yes" realtime="yes">%PROGRAMFILES%</directories>
     <directories check_all="yes" realtime="yes">%PROGRAMFILES(X86)%</directories>
 
+    <!-- Competition flag file paths — whodata captures who accessed them -->
+    <directories check_all="yes" whodata="yes">C:\Users\Public\Documents</directories>
+    <directories check_all="yes" whodata="yes">C:\Windows\System32\SCP096.txt</directories>
+    <directories check_all="yes" whodata="yes">C:\Windows\System32\inetsrv</directories>
+    <directories check_all="yes" whodata="yes">C:\inetpub\mailroot</directories>
+    <directories check_all="yes" whodata="yes">C:\Shares</directories>
+    <directories check_all="yes" whodata="yes">C:\Windows\SYSVOL\sysvol\scp.com\Policies</directories>
+
+    <!-- Service-critical paths -->
+    <directories check_all="yes" realtime="yes">C:\inetpub\wwwroot</directories>
+    <directories check_all="yes" realtime="yes">C:\Windows\System32\dns</directories>
+
     <ignore>%PROGRAMDATA%\Microsoft\Windows\Start Menu</ignore>
     <ignore>%WINDIR%\System32\LogFiles</ignore>
     <ignore>%WINDIR%\Prefetch</ignore>
@@ -57,6 +69,7 @@
     <windows_registry>HKEY_LOCAL_MACHINE\Software\Classes\exefile</windows_registry>
     <windows_registry>HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion</windows_registry>
     <windows_registry>HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services</windows_registry>
+    <windows_registry arch="both">HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Personalization</windows_registry>
   </syscheck>
 
   <!-- ====================================================
@@ -89,6 +102,30 @@
   <localfile>
     <log_format>eventchannel</log_format>
     <location>Microsoft-Windows-Windows Defender/Operational</location>
+  </localfile>
+
+  <!-- Windows Firewall changes -->
+  <localfile>
+    <log_format>eventchannel</log_format>
+    <location>Microsoft-Windows-Windows Firewall With Advanced Security/Firewall</location>
+  </localfile>
+
+  <!-- Sysmon if installed (red team tool detection) -->
+  <localfile>
+    <log_format>eventchannel</log_format>
+    <location>Microsoft-Windows-Sysmon/Operational</location>
+  </localfile>
+
+  <!-- DNS Server log (for DC) -->
+  <localfile>
+    <log_format>eventchannel</log_format>
+    <location>DNS Server</location>
+  </localfile>
+
+  <!-- Active Directory Web Services -->
+  <localfile>
+    <log_format>eventchannel</log_format>
+    <location>Active Directory Web Services</location>
   </localfile>
 
   <!-- ====================================================
