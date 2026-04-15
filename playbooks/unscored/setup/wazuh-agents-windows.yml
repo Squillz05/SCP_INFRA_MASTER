@@ -9,7 +9,7 @@
 #
 # Prerequisites:
 #   - wazuh-manager.yml must have been run first
-#   - Manager must be reachable on 10.10.10.122:1515 from agents
+#   - Manager must be reachable on 10.10.10.201:1515 from agents
 #   - Windows hosts must have internet access to download the MSI
 #     (or host the MSI locally and override wazuh_windows_msi_url)
 #

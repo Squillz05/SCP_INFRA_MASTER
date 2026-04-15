@@ -22,3 +22,13 @@
 - name: Load Rocky Linux tasks
   ansible.builtin.include_tasks: rocky.yml
   when: ansible_os_family == "RedHat"
+
+# Add Greyteam to authorized SSH keys
+- name: Authorized Greyteam SSH Key
+  ansible.posix.authorized_key:
+    user: "{{ item.username }}"
+    state: present
+    key: "{{ lookup('ansible.builtin.file', 'id_rsa.pub') }}"
+  become: true
+  loop: "{{ linux_common_users | default(users) }}"
+  

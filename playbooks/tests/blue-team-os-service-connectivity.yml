@@ -1,0 +1,133 @@
+---
+# From Blue Team hosts, verify reachability to range services appropriate per OS:
+# - Blue Linux: TCP/UDP — SSH/22 to services, peers, and Red Linux; MySQL/HTTP/S; OpenVPN.
+# - Blue Windows: TCP — RDP/WinRM to DC/SMB/SMTP, peer Blue Windows, and Red Windows.
+#
+# Usage:
+#   ansible-playbook -i inventory/hosts.ini playbooks/tests/blue-team-os-service-connectivity.yml
+#
+# Show only failed probes in the tables (still prints PASS/FAIL totals):
+#   ansible-playbook ... -e blue_os_connectivity_failures_only=true
+#
+# Blue Windows use WinRM from inventory [windows:vars] (HTTPS 5986 by default).
+#
+- name: Blue Linux — reach Linux services, peers, and Red Linux
+  hosts: blue_linux_workstations
+  gather_facts: false
+  become: false
+  vars:
+    blue_os_connectivity_failures_only: false
+
+  tasks:
+    - name: Build Linux-side probe list
+      ansible.builtin.set_fact:
+        blue_linux_probe_targets: "{{ lookup('template', 'blue_linux_probe_targets_build.j2') | from_json }}"
+
+    - name: Run connectivity probes from Blue Linux host
+      ansible.builtin.shell: |
+        python3 - <<'PY'
+        import json, os, socket, subprocess
+        data = json.loads(os.environ["PROBE_JSON"])
+        results = []
+        for t in data:
+            name, ip, port, proto = t["name"], t["ip"], int(t["port"]), t.get("proto", "tcp")
+            ok = False
+            if proto == "tcp":
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(3)
+                try:
+                    s.connect((ip, port))
+                    ok = True
+                except OSError:
+                    ok = False
+                finally:
+                    s.close()
+            else:
+                r = subprocess.run(
+                    ["nc", "-u", "-z", "-w2", ip, str(port)],
+                    capture_output=True,
+                )
+                ok = r.returncode == 0
+            results.append({
+                "source": os.uname().nodename,
+                "target": name,
+                "target_ip": ip,
+                "port": port,
+                "proto": proto,
+                "reachable": ok,
+            })
+        print(json.dumps(results))
+        PY
+      environment:
+        PROBE_JSON: "{{ blue_linux_probe_targets | to_json }}"
+      register: blue_linux_conn_raw
+      changed_when: false
+
+    - name: Parse Linux probe results
+      ansible.builtin.set_fact:
+        blue_linux_conn_results: "{{ blue_linux_conn_raw.stdout | from_json }}"
+
+    - name: Show Linux connectivity table
+      ansible.builtin.debug:
+        msg: "{{ lookup('template', 'blue_linux_connectivity_table.j2') }}"
+
+    # - name: Fail if any Linux-side probe failed
+    #   ansible.builtin.assert:
+    #     that:
+    #       - (blue_linux_conn_results | selectattr('reachable', 'equalto', false) | list | length) == 0
+    #     fail_msg: >-
+    #       Failures from {{ inventory_hostname }}:
+    #       {{ blue_linux_conn_results | selectattr('reachable', 'equalto', false) | list }}
+    #     success_msg: "All Linux service probes passed from {{ inventory_hostname }}."
+
+- name: Blue Windows — reach Windows services (RDP, WinRM, AD, SMB, SMTP)
+  hosts: blue_windows_workstations
+  gather_facts: false
+  vars:
+    blue_os_connectivity_failures_only: false
+
+  tasks:
+    - name: Build Windows-side probe list
+      ansible.builtin.set_fact:
+        blue_win_probe_targets: "{{ lookup('template', 'blue_win_probe_targets_build.j2') | from_json }}"
+
+    - name: Run probes from Blue Windows workstation
+      ansible.windows.win_shell: |
+        $targets = @'
+        {{ blue_win_probe_targets | to_json }}
+        '@ | ConvertFrom-Json
+        $results = @()
+        foreach ($t in $targets) {
+          foreach ($p in $t.ports) {
+            $ok = Test-NetConnection -ComputerName $t.ip -Port $p -WarningAction SilentlyContinue -InformationLevel Quiet
+            $results += [PSCustomObject]@{
+              source = $env:COMPUTERNAME
+              target = [string]$t.name
+              target_ip = [string]$t.ip
+              port = [int]$p
+              reachable = [bool]$ok
+            }
+          }
+        }
+        ConvertTo-Json -InputObject @($results) -Depth 5 -Compress
+      register: blue_win_conn_raw
+      changed_when: false
+
+    - name: Parse Windows probe results
+      ansible.builtin.set_fact:
+        blue_win_conn_results: "{{ ([_win_parsed] if _win_parsed is mapping else _win_parsed) }}"
+      vars:
+        _win_parsed: "{{ blue_win_conn_raw.stdout | from_json }}"
+
+    - name: Show Windows connectivity table
+      ansible.builtin.debug:
+        msg: "{{ lookup('template', 'blue_windows_connectivity_table.j2') }}"
+
+    - name: Fail if any Windows-side probe failed
+      ansible.builtin.assert:
+        that:
+          - (blue_win_conn_results | selectattr('reachable', 'equalto', false) | list | length) == 0
+        fail_msg: >-
+          Failures from {{ inventory_hostname }}:
+          {{ blue_win_conn_results | selectattr('reachable', 'equalto', false) | list }}
+        success_msg: "All Windows service probes passed from {{ inventory_hostname }}."

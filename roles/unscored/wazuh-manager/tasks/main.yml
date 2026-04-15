@@ -3,7 +3,7 @@
 # Role: wazuh-manager
 # Description: Deploys Wazuh all-in-one (indexer + manager + dashboard)
 #              on Ubuntu using the official Wazuh install script.
-# Target: scp-wazuh-01 (10.10.10.122) — Ubuntu 22.04/24.04
+# Target: scp-wazuh-01 (10.10.10.201) — Ubuntu 22.04/24.04
 # Author: Grey Team
 # Date Created: 04/03/2026
 #
@@ -98,43 +98,17 @@
     - unscored_wazuh_install_result is defined
 
 # ----------------------------------------------------------
-# 4. Retrieve generated admin credentials
+# 4. Display admin credentials from install script output
+# The installer prints credentials in its stdout summary —
+# no need to find the tar or run the passwords tool (which
+# rotates all passwords when called with -a).
 # ----------------------------------------------------------
-- name: Find wazuh-install-files.tar (credentials archive)
-  ansible.builtin.find:
-    paths: /root
-    patterns: "wazuh-install-files.tar"
-  register: unscored_creds_tar
-
-- name: Extract Wazuh passwords file
-  ansible.builtin.command:
-    cmd: "tar -O -xf {{ unscored_creds_tar.files[0].path }} wazuh-install-files/wazuh-passwords.txt"
-  register: unscored_wazuh_passwords
-  changed_when: false
-  when: unscored_creds_tar.matched > 0
-
 - name: Display Wazuh credentials (save these!)
   ansible.builtin.debug:
-    msg: "{{ unscored_wazuh_passwords.stdout_lines }}"
+    msg: "{{ unscored_wazuh_install_result.stdout_lines | select('search', 'Password|User: admin') | list }}"
   when:
-    - unscored_wazuh_passwords is defined
-    - unscored_wazuh_passwords.stdout is defined
-
-- name: Fallback — extract credentials via passwords tool
-  ansible.builtin.command:
-    cmd: /usr/share/wazuh-indexer/plugins/opensearch-security/tools/wazuh-passwords-tool.sh -a
-  register: unscored_wazuh_passwords_fallback
-  changed_when: false
-  failed_when: false
-  when: unscored_creds_tar.matched == 0
-
-- name: Display credentials (fallback)
-  ansible.builtin.debug:
-    msg: "{{ unscored_wazuh_passwords_fallback.stdout_lines }}"
-  when:
-    - unscored_wazuh_passwords_fallback is defined
-    - unscored_wazuh_passwords_fallback.stdout is defined
-    - unscored_wazuh_passwords_fallback.rc == 0
+    - unscored_wazuh_install_result is defined
+    - unscored_wazuh_install_result.stdout is defined
 
 # ----------------------------------------------------------
 # 5. Deploy custom manager ossec.conf
@@ -153,6 +127,18 @@
   ansible.builtin.template:
     src: ossec-manager.conf.j2
     dest: /var/ossec/etc/ossec.conf
+    owner: root
+    group: wazuh
+    mode: '0640'
+  notify: Restart wazuh-manager
+
+# ----------------------------------------------------------
+# 5b. Deploy competition custom rules
+# ----------------------------------------------------------
+- name: Deploy competition custom rules
+  ansible.builtin.copy:
+    src: local_rules.xml
+    dest: /var/ossec/etc/rules/local_rules.xml
     owner: root
     group: wazuh
     mode: '0640'

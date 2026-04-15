@@ -33,8 +33,8 @@
   ansible.builtin.template:
     src: templates/o5.j2
     dest: /home/ntf/o5.orders
-    owner: grayteam
-    group: grayteam
+    owner: greyteam
+    group: greyteam
     mode: "0644"
     attributes: "+i"
   become: true

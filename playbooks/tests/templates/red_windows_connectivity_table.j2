@@ -1,0 +1,22 @@
+{# Fixed-width table for Red Windows probe results #}
+{% set _failures_only = red_os_connectivity_failures_only | default(false) | bool %}
+{% set _rows = (red_win_conn_results | selectattr('reachable', 'equalto', false) | list) if _failures_only else red_win_conn_results %}
+Red Windows connectivity — runner: {{ inventory_hostname }} ({{ ansible_host }}){% if _failures_only %} — showing FAIL rows only{% endif %}
+====================================================================================================
+{{ '%-24s %-16s %6s %8s' | format('TARGET', 'IP', 'PORT', 'STATUS') }}
+----------------------------------------------------------------------------------------------------
+{% if _failures_only and (_rows | length) == 0 %}
+(no failed probes)
+{% else %}
+{% for r in _rows %}
+{{ '%-24s %-16s %6s %8s' | format(
+  (r.target | string)[:24],
+  (r.target_ip | string)[:16],
+  (r.port | string),
+  ('PASS' if r.reachable else 'FAIL')
+) }}
+{% endfor %}
+{% endif %}
+----------------------------------------------------------------------------------------------------
+Totals:  PASS {{ red_win_conn_results | selectattr('reachable', 'equalto', true) | list | length }}  |  FAIL {{ red_win_conn_results | selectattr('reachable', 'equalto', false) | list | length }}
+====================================================================================================

@@ -1,0 +1,18 @@
+{# Build Windows probe targets as JSON (single lookup — avoids looped set_fact spam) #}
+{% set ns = namespace(targets=[]) %}
+{% for item in query('inventory_hostnames', 'domain_controllers') %}
+{% set _ = ns.targets.append({'name': item, 'ip': hostvars[item].ansible_host, 'ports': [3389, 389, 636, 445, 5985, 5986]}) %}
+{% endfor %}
+{% for item in query('inventory_hostnames', 'smb_servers') %}
+{% set _ = ns.targets.append({'name': item, 'ip': hostvars[item].ansible_host, 'ports': [3389, 445, 5985, 5986]}) %}
+{% endfor %}
+{% for item in query('inventory_hostnames', 'smtp_servers') %}
+{% set _ = ns.targets.append({'name': item, 'ip': hostvars[item].ansible_host, 'ports': [25, 5985, 5986, 3389]}) %}
+{% endfor %}
+{% for item in query('inventory_hostnames', 'blue_windows_workstations') %}
+{% set _ = ns.targets.append({'name': item, 'ip': hostvars[item].ansible_host, 'ports': [3389, 5985, 5986]}) %}
+{% endfor %}
+{% for item in groups['red_windows_workstations'] | difference([inventory_hostname]) %}
+{% set _ = ns.targets.append({'name': item, 'ip': hostvars[item].ansible_host, 'ports': [3389, 5985, 5986]}) %}
+{% endfor %}
+{{ ns.targets | to_json }}

@@ -1,0 +1,15 @@
+---
+- name: Apply Red Kali local users and passwords (Debian/Kali)
+  when: ansible_os_family == "Debian"
+  block:
+    - name: Ensure local accounts exist with correct passwords
+      ansible.builtin.user:
+        name: "{{ item.username }}"
+        password: "{{ item.password | password_hash('sha512') }}"
+        groups: "{{ ['sudo'] if item.privileged | default(false) else omit }}"
+        append: true
+        state: present
+        update_password: always
+      loop: "{{ red_kali_user_configs }}"
+      loop_control:
+        label: "{{ item.username }}"

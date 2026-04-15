@@ -1,0 +1,21 @@
+---
+# Red Team Kali local user/password baseline.
+# Sets: cyberrange, greyteam, scp079 (see vars/linux/red_kali_users.yml).
+#
+# Targets only Kali boxes under red_linux_workstations (excludes Red Ubuntu).
+#
+# Usage:
+#   ansible-playbook -i inventory/hosts.ini playbooks/linux/setup/red-linux-users.yml
+#
+- name: Red Kali local users and passwords
+  hosts: "red_linux_workstations"
+  gather_facts: true
+  become: true
+  vars:
+    # Required when the SSH user (e.g. greyteam) must type a password for sudo.
+    ansible_become_password: "{{ ansible_password }}"
+  vars_files:
+    - ../../../vars/linux/red_kali_users.yml
+
+  roles:
+    - linux/red-kali-users

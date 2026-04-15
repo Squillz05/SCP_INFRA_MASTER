@@ -1,0 +1,18 @@
+---
+# Quick SSH connectivity test for all Linux hosts in inventory.
+#
+# Usage:
+#   ansible-playbook -i inventory/hosts.ini playbooks/linux/tests/ssh-connectivity.yml
+#
+- name: Validate SSH connectivity to all Linux boxes
+  hosts: linux
+  gather_facts: false
+  any_errors_fatal: true
+
+  tasks:
+    - name: Test SSH transport and Python execution
+      ansible.builtin.ping:
+
+    - name: Report successful SSH connectivity
+      ansible.builtin.debug:
+        msg: "SSH OK: {{ inventory_hostname }} ({{ ansible_host }})"

@@ -5,9 +5,10 @@
 # ========================================================
 
 linux_wazuh_version: "4.9"
+linux_wazuh_pkg_version: "4.9.2-1"
 
 # Manager connection — set this to the Wazuh manager IP
-linux_wazuh_manager_ip: "10.10.10.122"
+linux_wazuh_manager_ip: "10.10.10.201"
 linux_wazuh_manager_port: 1514
 linux_wazuh_manager_protocol: "tcp"
 linux_wazuh_enrollment_port: 1515

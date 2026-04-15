@@ -46,6 +46,14 @@
   register: windows_wazuh_msi_install
 
 # ----------------------------------------------------------
+# 3b. Enable file system auditing (required for whodata FIM)
+# ----------------------------------------------------------
+- name: Enable file system object access auditing
+  ansible.windows.win_shell: |
+    auditpol /set /subcategory:"File System" /success:enable /failure:enable
+  changed_when: false
+
+# ----------------------------------------------------------
 # 4. Deploy custom ossec.conf (overrides MSI defaults)
 # ----------------------------------------------------------
 - name: Deploy Windows agent ossec.conf

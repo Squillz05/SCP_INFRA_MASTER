@@ -1,0 +1,30 @@
+{# Blue Linux → range services, peer Blue Linux, Red Linux (SSH), scoring/Wazuh, OpenVPN UDP #}
+{% set ns = namespace(probes=[]) %}
+{% for item in query('inventory_hostnames', 'openssh_servers') + query('inventory_hostnames', 'openvpn_servers') %}
+{% set _ = ns.probes.append({'name': item, 'ip': hostvars[item].ansible_host, 'port': 22, 'proto': 'tcp'}) %}
+{% endfor %}
+{% for item in query('inventory_hostnames', 'mysql_servers') %}
+{% set _ = ns.probes.extend([
+  {'name': item, 'ip': hostvars[item].ansible_host, 'port': 22, 'proto': 'tcp'},
+  {'name': item, 'ip': hostvars[item].ansible_host, 'port': 3306, 'proto': 'tcp'}
+]) %}
+{% endfor %}
+{% for item in query('inventory_hostnames', 'apache_servers') %}
+{% set _ = ns.probes.extend([
+  {'name': item, 'ip': hostvars[item].ansible_host, 'port': 22, 'proto': 'tcp'},
+  {'name': item, 'ip': hostvars[item].ansible_host, 'port': 80, 'proto': 'tcp'},
+]) %}
+{% endfor %}
+{% for item in groups['blue_linux_workstations'] | difference([inventory_hostname]) %}
+{% set _ = ns.probes.append({'name': item, 'ip': hostvars[item].ansible_host, 'port': 22, 'proto': 'tcp'}) %}
+{% endfor %}
+{% for item in query('inventory_hostnames', 'red_linux_workstations') %}
+{% set _ = ns.probes.append({'name': item, 'ip': hostvars[item].ansible_host, 'port': 22, 'proto': 'tcp'}) %}
+{% endfor %}
+{% for item in (groups['scoring_host'] | default([])) + (groups['wazuh_manager'] | default([])) %}
+{% set _ = ns.probes.append({'name': item, 'ip': hostvars[item].ansible_host, 'port': 22, 'proto': 'tcp'}) %}
+{% endfor %}
+{% for item in query('inventory_hostnames', 'openvpn_servers') %}
+{% set _ = ns.probes.append({'name': item, 'ip': hostvars[item].ansible_host, 'port': 1194, 'proto': 'udp'}) %}
+{% endfor %}
+{{ ns.probes | to_json }}

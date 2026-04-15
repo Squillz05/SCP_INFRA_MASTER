@@ -60,20 +60,99 @@
 # ----------------------------------------------------------
 - name: "[apt] Install wazuh-agent"
   ansible.builtin.apt:
-    name: wazuh-agent
+    name: "wazuh-agent={{ linux_wazuh_pkg_version }}"
     state: present
     update_cache: true
+    allow_downgrade: true
   environment:
     WAZUH_MANAGER: "{{ linux_wazuh_manager_ip }}"
   when: ansible_os_family == "Debian"
 
-- name: "[dnf] Install wazuh-agent"
+- name: "[dnf] Check installed wazuh-agent version"
+  ansible.builtin.command:
+    cmd: rpm -q --queryformat '%{VERSION}' wazuh-agent
+  register: linux_dnf_wazuh_installed
+  changed_when: false
+  failed_when: false
+  when: ansible_os_family == "RedHat"
+
+- name: "[dnf] Remove wazuh-agent if version mismatch"
   ansible.builtin.dnf:
     name: wazuh-agent
+    state: absent
+  when:
+    - ansible_os_family == "RedHat"
+    - linux_dnf_wazuh_installed.rc == 0
+    - linux_dnf_wazuh_installed.stdout not in linux_wazuh_pkg_version
+
+- name: "[dnf] Install wazuh-agent"
+  ansible.builtin.dnf:
+    name: "wazuh-agent-{{ linux_wazuh_pkg_version }}"
     state: present
   environment:
     WAZUH_MANAGER: "{{ linux_wazuh_manager_ip }}"
   when: ansible_os_family == "RedHat"
+
+# ----------------------------------------------------------
+# 2b. Install auditd (required for whodata FIM)
+# ----------------------------------------------------------
+- name: "[apt] Install auditd for whodata FIM"
+  ansible.builtin.apt:
+    name: auditd
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: "[dnf] Install audit for whodata FIM"
+  ansible.builtin.dnf:
+    name: audit
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Ensure auditd service is enabled and running
+  ansible.builtin.systemd:
+    name: auditd
+    enabled: true
+    state: started
+
+- name: Increase inotify watch limit for FIM
+  ansible.posix.sysctl:
+    name: fs.inotify.max_user_watches
+    value: '524288'
+    state: present
+    reload: true
+
+# ----------------------------------------------------------
+# 2c. Deploy auditd competition rules (command tracking)
+# ----------------------------------------------------------
+- name: Deploy auditd competition monitoring rules
+  ansible.builtin.copy:
+    content: |
+      ## SCP Competition — auditd rules for forensic visibility
+      ## Tracks process kills, password file changes, and Wazuh tampering
+      -a always,exit -F arch=b64 -S execve -k competition_commands
+      -a always,exit -F arch=b32 -S execve -k competition_commands
+      -w /usr/bin/kill -p x -k process_kill
+      -w /usr/bin/pkill -p x -k process_kill
+      -w /usr/bin/killall -p x -k process_kill
+      -w /etc/passwd -p wa -k password_file
+      -w /etc/shadow -p wa -k password_file
+      -w /etc/group -p wa -k group_file
+      -w /var/ossec/etc/ossec.conf -p wa -k wazuh_config
+    dest: /etc/audit/rules.d/competition.rules
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Restart auditd
+
+# ----------------------------------------------------------
+# 2d. Deploy Wazuh agent watchdog cron (auto-restart if killed)
+# ----------------------------------------------------------
+- name: Deploy Wazuh agent watchdog cron job
+  ansible.builtin.cron:
+    name: "wazuh-agent-watchdog"
+    minute: "*"
+    job: "/usr/bin/systemctl is-active wazuh-agent > /dev/null 2>&1 || /usr/bin/systemctl restart wazuh-agent"
+    user: root
 
 # ----------------------------------------------------------
 # 3. Deploy agent ossec.conf

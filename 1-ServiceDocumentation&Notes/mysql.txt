@@ -8,7 +8,7 @@ This service is scored and must remain available, properly configured, and prote
 
 OS Users:    
 cyberrange / Cyberrange123! (privileged)
-grayteam / DONOTTOUCH!!!@123$ (privileged — Grey Team only)
+greyteam / DONOTTOUCH!!!@123$ (privileged — Grey Team only)
 scp073 / abel_is_dead (non‑privileged)
 scp343 / 4ll-p0w3rfuL (privileged)
 ntf / s3cuRe-c0n+a1n-Pr0tecT (privileged)
