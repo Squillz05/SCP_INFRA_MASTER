@@ -96,6 +96,26 @@ Search: `rule.groups: agent_tamper`
 
 Fires if anyone stops the Wazuh agent, modifies its config, or if an agent disconnects. The Wazuh agent is a Grey Team service — tampering is a violation from either team.
 
+### FILTER: Red Team Activity (catch-all)
+Search: `rule.groups: red_team_activity`
+
+Shows ALL SSH logins from red team IPs (10.10.10.80-89). Even if specific attack rules miss, this ensures you see red team accessing scored servers.
+
+### FILTER: Worm / Lateral Movement
+Search: `rule.groups: service_disruption` AND look for rules 100810-100812
+
+Detects:
+- Scripts run from /tmp, /dev/shm, /var/tmp (rule 100810)
+- Mass destructive operations like `rm -rf` (rule 100811)
+- SSH/SCP between scored servers — lateral movement (rule 100812)
+
+### FILTER: Password Changes
+> **Rule:** Chaos Insurgency may not change any default user passwords
+
+Search: `rule.groups: account_destruction` (now also covers password changes)
+
+Day 2 addition: This filter now also fires on `passwd`, `chpasswd`, and `usermod -p` commands, not just user deletion.
+
 ### FILTER: Windows Defender
 > **Rule:** Nine-Tailed Fox may not turn on nor re-enable Windows Defender
 
@@ -178,23 +198,95 @@ If the dashboard is slow or you need raw data, SSH into the manager:
 ssh cyberrange@10.10.10.201
 ```
 
-Useful commands:
+### Real-Time Alert Stream (MAIN DISPLAY during competition)
 
 ```bash
-# List all agents and status
+# Pretty-printed alert stream — shows timestamp, agent, level, description
+sudo tail -f /var/ossec/logs/alerts/alerts.json | python3 -c "
+import sys,json
+for line in sys.stdin:
+    try:
+        a=json.loads(line)
+        r=a.get('rule',{})
+        ag=a.get('agent',{})
+        print(f\"{a.get('timestamp','')} | {ag.get('name','mgr'):15s} | L{r.get('level',0):2d} | {r.get('description','')}\")
+    except: pass
+"
+```
+
+```bash
+# Competition-only alerts (custom rules 100xxx)
+sudo tail -f /var/ossec/logs/alerts/alerts.json | python3 -c "
+import sys,json
+for line in sys.stdin:
+    try:
+        a=json.loads(line)
+        r=a.get('rule',{})
+        if int(r.get('id','0'))>=100000:
+            ag=a.get('agent',{})
+            print(f\"{a.get('timestamp','')} | {ag.get('name','mgr'):15s} | L{r.get('level',0):2d} | {r.get('description','')}\")
+    except: pass
+"
+```
+
+```bash
+# High severity only (level >= 12)
+sudo tail -f /var/ossec/logs/alerts/alerts.json | python3 -c "
+import sys,json
+for line in sys.stdin:
+    try:
+        a=json.loads(line)
+        r=a.get('rule',{})
+        if r.get('level',0)>=12:
+            ag=a.get('agent',{})
+            print(f\"{a.get('timestamp','')} | {ag.get('name','mgr'):15s} | L{r.get('level',0):2d} | {r.get('description','')}\")
+    except: pass
+"
+```
+
+### Agent Health Check
+
+```bash
+# Color-coded agent status (green=Active, red=Disconnected)
+sudo /var/ossec/bin/agent_control -l | awk '/Active/{printf "\033[32m%s\033[0m\n",$0} /Disconnected/{printf "\033[31m%s\033[0m\n",$0} /Never/{printf "\033[33m%s\033[0m\n",$0}'
+
+# List all agents
 sudo /var/ossec/bin/manage_agents -l
+```
 
-# Tail alerts in real time (most useful during competition)
-sudo tail -f /var/ossec/logs/alerts/alerts.json | python3 -m json.tool
+### Diagnostic Commands
 
-# Search recent alerts for flag compromise
-sudo grep -i "flag_compromise" /var/ossec/logs/alerts/alerts.json | tail -20
+```bash
+# Total alert count
+sudo wc -l /var/ossec/logs/alerts/alerts.json
+
+# All unique rule IDs that fired (most frequent first)
+sudo grep -o '"id":"[0-9]*"' /var/ossec/logs/alerts/alerts.json | sort | uniq -c | sort -rn | head -30
+
+# Alert count per agent
+sudo grep -o '"name":"[^"]*"' /var/ossec/logs/alerts/alerts.json | sort | uniq -c | sort -rn | head -20
 
 # Search for a specific rule group
+sudo grep "flag_compromise" /var/ossec/logs/alerts/alerts.json | tail -20
 sudo grep "scoring_engine_block" /var/ossec/logs/alerts/alerts.json
 
-# Check agent connection status
-sudo /var/ossec/bin/agent_control -l
+# Verify custom rules loaded without errors
+sudo grep -iE "error|warning" /var/ossec/logs/ossec.log | grep -iE "rule|local_rules|decoder" | tail -20
+
+# Check if archiving is working (Day 2+)
+sudo ls -lh /var/ossec/logs/archives/archives.json 2>/dev/null
+```
+
+### Searching the Archives (Day 2+)
+
+With archiving enabled, ALL events are stored — even ones that don't trigger rules:
+
+```bash
+# Search archives for red team IP activity
+sudo grep -E "10\.10\.10\.8[0-9]" /var/ossec/logs/archives/archives.json | tail -50
+
+# Search archives for activity on a specific scored server
+sudo grep "10\.10\.10\.101" /var/ossec/logs/archives/archives.json | tail -50
 ```
 
 ---

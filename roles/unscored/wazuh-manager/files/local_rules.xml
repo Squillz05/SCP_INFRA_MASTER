@@ -290,4 +290,170 @@
     <group>competition,agent_tamper,syscheck,</group>
   </rule>
 
+  <!-- Attempt to kill Wazuh agent process -->
+  <rule id="100902" level="14">
+    <match type="pcre2">(?:kill|pkill|killall)\s+.*(?:wazuh|ossec)</match>
+    <description>COMPETITION CRITICAL: Attempt to kill Wazuh agent process</description>
+    <group>competition,agent_tamper,</group>
+  </rule>
+
+  <!-- Attempt to stop Wazuh agent via systemctl -->
+  <rule id="100903" level="14">
+    <match type="pcre2">systemctl\s+(?:stop|disable|mask)\s+wazuh-agent</match>
+    <description>COMPETITION CRITICAL: Attempt to stop Wazuh agent service</description>
+    <group>competition,agent_tamper,</group>
+  </rule>
+
+  <!-- Attempt to uninstall Wazuh agent -->
+  <rule id="100904" level="14">
+    <match type="pcre2">(?:apt|apt-get|dpkg|dnf|yum|rpm)\s+.*(?:remove|erase|purge)\s+.*wazuh</match>
+    <description>COMPETITION CRITICAL: Attempt to uninstall Wazuh agent</description>
+    <group>competition,agent_tamper,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 9: Password / Credential Changes (100200-100219 cont.)
+       Rule: Chaos Insurgency may not change default user passwords
+  ============================================================ -->
+
+  <rule id="100210" level="12">
+    <if_sid>5555</if_sid>
+    <description>COMPETITION: Linux password changed — $(dstuser)</description>
+    <group>competition,account_destruction,</group>
+  </rule>
+
+  <rule id="100211" level="12">
+    <match type="pcre2">passwd:\s+password\s+changed</match>
+    <description>COMPETITION: Password change detected via passwd command</description>
+    <group>competition,account_destruction,</group>
+  </rule>
+
+  <rule id="100212" level="13">
+    <match type="pcre2">chpasswd|usermod\s+-p|usermod\s+--password</match>
+    <description>COMPETITION: Bulk/direct password change command — $0</description>
+    <group>competition,account_destruction,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 10: Process Killing Detection (100510-100519)
+       Closes the gap that let the worm bypass Day 1 detection
+  ============================================================ -->
+
+  <!-- Direct process kill of scored services -->
+  <rule id="100510" level="13">
+    <match type="pcre2">(?:kill|pkill|killall)\s+.*(?:sshd|openvpn|apache2|httpd|mysqld|mariadbd|mysql)</match>
+    <description>COMPETITION: Process kill targeting scored service — $0</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <!-- Kill command detected via auditd -->
+  <rule id="100511" level="12">
+    <if_group>audit_command</if_group>
+    <field name="audit.command" type="pcre2">^kill$|^pkill$|^killall$</field>
+    <description>COMPETITION: Kill command executed (audit) — $(audit.exe) by $(audit.euid)</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 11: Config Modification Detection (100520-100529)
+       Day 1 only caught deletion — now catches modification too
+  ============================================================ -->
+
+  <!-- Critical service config MODIFIED (not just deleted) -->
+  <rule id="100520" level="13">
+    <if_sid>550</if_sid>
+    <field name="syscheck.path" type="pcre2">sshd_config|/etc/openvpn/server\.conf|/etc/apache2/|/etc/mysql/|50-server\.cnf|/etc/ssh/ssh_config</field>
+    <description>COMPETITION: Critical service config MODIFIED — $(syscheck.path) by $(syscheck.audit.user.name)</description>
+    <group>competition,service_disruption,syscheck,</group>
+  </rule>
+
+  <!-- Service binary replaced -->
+  <rule id="100521" level="14">
+    <if_sid>550</if_sid>
+    <field name="syscheck.path" type="pcre2">/usr/sbin/sshd|/usr/sbin/apache2|/usr/sbin/mysqld|/usr/sbin/openvpn|/usr/sbin/httpd|/usr/sbin/mariadbd</field>
+    <description>COMPETITION: Service binary REPLACED — $(syscheck.path)</description>
+    <group>competition,service_disruption,syscheck,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 12: Network-Level Disruption (100540-100549)
+  ============================================================ -->
+
+  <!-- Network interface taken down -->
+  <rule id="100540" level="12">
+    <match type="pcre2">ip\s+link\s+set\s+\S+\s+down</match>
+    <description>COMPETITION: Network interface taken down — $0</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <!-- IP address removed -->
+  <rule id="100541" level="12">
+    <match type="pcre2">ip\s+addr\s+(?:del|flush)</match>
+    <description>COMPETITION: IP address removed from interface — $0</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 13: SSH Key Manipulation / Persistence (100610-100619)
+  ============================================================ -->
+
+  <rule id="100610" level="12">
+    <if_sid>550,554</if_sid>
+    <field name="syscheck.path" type="pcre2">authorized_keys|\.ssh/</field>
+    <description>COMPETITION: SSH key file modified — $(syscheck.path) by $(syscheck.audit.user.name)</description>
+    <group>competition,persistence,syscheck,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 14: Red Team Catch-All (100800-100819)
+       Ensures visibility even if specific rules miss
+  ============================================================ -->
+
+  <!-- SSH login from red team IP -->
+  <rule id="100801" level="8">
+    <if_sid>5715,5716</if_sid>
+    <field name="srcip" type="pcre2">10\.10\.10\.8[0-9]</field>
+    <description>COMPETITION: SSH login from Red Team — $(srcip) as $(dstuser)</description>
+    <group>competition,red_team_activity,</group>
+  </rule>
+
+  <!-- ============================================================
+       GROUP 15: Worm / Lateral Movement Detection (100810-100819)
+       Based on Day 1 worm attack patterns
+  ============================================================ -->
+
+  <!-- Script execution from temp directories -->
+  <rule id="100810" level="14">
+    <match type="pcre2">(?:bash|sh|python[23]?|perl)\s+/(?:tmp|dev/shm|var/tmp)/</match>
+    <description>COMPETITION: Script executed from temp directory — $0</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <!-- Mass destructive file operations -->
+  <rule id="100811" level="13">
+    <match type="pcre2">rm\s+-[rRf]{2,}\s+/(?:etc|usr|var|home|opt)|chmod\s+777\s+/</match>
+    <description>COMPETITION: Mass destructive file operation — $0</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <!-- Lateral movement: SSH/SCP from scored server to scored server -->
+  <rule id="100812" level="13">
+    <match type="pcre2">(?:ssh|scp|rsync)\s+.*10\.10\.10\.10[1-4]</match>
+    <description>COMPETITION: Lateral movement to scored server — $0</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <!-- Package manager abuse: generic package removal -->
+  <rule id="100530" level="12">
+    <match type="pcre2">(?:apt|apt-get|dpkg)\s+.*(?:remove|purge)\s+</match>
+    <description>COMPETITION: Package removal detected (Debian) — $0</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
+  <rule id="100531" level="12">
+    <match type="pcre2">(?:dnf|yum|rpm)\s+.*(?:remove|erase)\s+</match>
+    <description>COMPETITION: Package removal detected (RHEL) — $0</description>
+    <group>competition,service_disruption,</group>
+  </rule>
+
 </group>

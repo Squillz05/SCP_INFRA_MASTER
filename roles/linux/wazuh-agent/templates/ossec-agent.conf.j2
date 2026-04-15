@@ -61,16 +61,21 @@
     <directories check_all="yes" report_changes="yes" whodata="yes">/usr/lib/systemd/system/sshd.service.d</directories>
     <directories check_all="yes" report_changes="yes" whodata="yes">/usr/lib/systemd/system-generators/systemd-network-generator</directories>
 
-    <!-- Service-critical config directories -->
-    <directories check_all="yes" report_changes="yes" realtime="yes">/etc/openvpn</directories>
-    <directories check_all="yes" report_changes="yes" realtime="yes">/etc/ssh</directories>
-    <directories check_all="yes" report_changes="yes" realtime="yes">/etc/mysql</directories>
-    <directories check_all="yes" report_changes="yes" realtime="yes">/etc/apache2</directories>
-    <directories check_all="yes" report_changes="yes" realtime="yes">/var/www</directories>
-    <directories check_all="yes" report_changes="yes" realtime="yes">/etc/systemd/system</directories>
-    <directories check_all="yes" report_changes="yes" realtime="yes">/usr/lib/systemd/system</directories>
-    <directories check_all="yes" report_changes="yes" realtime="yes">/var/spool/cron</directories>
-    <directories check_all="yes" report_changes="yes" realtime="yes">/etc/cron.d</directories>
+    <!-- Service-critical config directories (whodata captures WHO made changes) -->
+    <directories check_all="yes" report_changes="yes" whodata="yes">/etc/openvpn</directories>
+    <directories check_all="yes" report_changes="yes" whodata="yes">/etc/ssh</directories>
+    <directories check_all="yes" report_changes="yes" whodata="yes">/etc/mysql</directories>
+    <directories check_all="yes" report_changes="yes" whodata="yes">/etc/apache2</directories>
+    <directories check_all="yes" report_changes="yes" whodata="yes">/var/www</directories>
+    <directories check_all="yes" report_changes="yes" whodata="yes">/etc/systemd/system</directories>
+    <directories check_all="yes" report_changes="yes" whodata="yes">/usr/lib/systemd/system</directories>
+    <directories check_all="yes" report_changes="yes" whodata="yes">/var/spool/cron</directories>
+    <directories check_all="yes" report_changes="yes" whodata="yes">/etc/cron.d</directories>
+
+    <!-- User/credential files — whodata tracks who changes passwords -->
+    <directories check_all="yes" report_changes="yes" whodata="yes">/etc/passwd</directories>
+    <directories check_all="yes" report_changes="yes" whodata="yes">/etc/shadow</directories>
+    <directories check_all="yes" report_changes="yes" whodata="yes">/etc/group</directories>
 
     <!-- Ignore noisy/volatile paths -->
     <ignore>/etc/mtab</ignore>
@@ -176,6 +181,50 @@
     <ignore_output>no</ignore_output>
     <run_on_start>yes</run_on_start>
     <timeout>30</timeout>
+  </wodle>
+
+  <!-- Day 2: scored service health check (every 30s) -->
+  <wodle name="command">
+    <disabled>no</disabled>
+    <tag>scored-services</tag>
+    <command>systemctl is-active sshd openvpn apache2 mysql mariadb 2>/dev/null; echo "---"; ps aux | grep -E 'sshd|openvpn|apache2|httpd|mysqld|mariadbd' | grep -v grep</command>
+    <interval>30</interval>
+    <ignore_output>no</ignore_output>
+    <run_on_start>yes</run_on_start>
+    <timeout>15</timeout>
+  </wodle>
+
+  <!-- Day 2: active network connections -->
+  <wodle name="command">
+    <disabled>no</disabled>
+    <tag>active-connections</tag>
+    <command>ss -tnp | grep ESTABLISHED</command>
+    <interval>60</interval>
+    <ignore_output>no</ignore_output>
+    <run_on_start>yes</run_on_start>
+    <timeout>15</timeout>
+  </wodle>
+
+  <!-- Day 2: user account monitoring -->
+  <wodle name="command">
+    <disabled>no</disabled>
+    <tag>user-list</tag>
+    <command>cat /etc/passwd | grep -v nologin | grep -v /bin/false</command>
+    <interval>120</interval>
+    <ignore_output>no</ignore_output>
+    <run_on_start>yes</run_on_start>
+    <timeout>10</timeout>
+  </wodle>
+
+  <!-- Day 2: Wazuh agent self-health check -->
+  <wodle name="command">
+    <disabled>no</disabled>
+    <tag>wazuh-selfcheck</tag>
+    <command>/var/ossec/bin/wazuh-control status</command>
+    <interval>60</interval>
+    <ignore_output>no</ignore_output>
+    <run_on_start>yes</run_on_start>
+    <timeout>10</timeout>
   </wodle>
 
   <!-- ====================================================

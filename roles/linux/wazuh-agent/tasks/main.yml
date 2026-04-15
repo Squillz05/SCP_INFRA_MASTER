@@ -122,6 +122,39 @@
     reload: true
 
 # ----------------------------------------------------------
+# 2c. Deploy auditd competition rules (command tracking)
+# ----------------------------------------------------------
+- name: Deploy auditd competition monitoring rules
+  ansible.builtin.copy:
+    content: |
+      ## SCP Competition — auditd rules for forensic visibility
+      ## Tracks process kills, password file changes, and Wazuh tampering
+      -a always,exit -F arch=b64 -S execve -k competition_commands
+      -a always,exit -F arch=b32 -S execve -k competition_commands
+      -w /usr/bin/kill -p x -k process_kill
+      -w /usr/bin/pkill -p x -k process_kill
+      -w /usr/bin/killall -p x -k process_kill
+      -w /etc/passwd -p wa -k password_file
+      -w /etc/shadow -p wa -k password_file
+      -w /etc/group -p wa -k group_file
+      -w /var/ossec/etc/ossec.conf -p wa -k wazuh_config
+    dest: /etc/audit/rules.d/competition.rules
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Restart auditd
+
+# ----------------------------------------------------------
+# 2d. Deploy Wazuh agent watchdog cron (auto-restart if killed)
+# ----------------------------------------------------------
+- name: Deploy Wazuh agent watchdog cron job
+  ansible.builtin.cron:
+    name: "wazuh-agent-watchdog"
+    minute: "*"
+    job: "/usr/bin/systemctl is-active wazuh-agent > /dev/null 2>&1 || /usr/bin/systemctl restart wazuh-agent"
+    user: root
+
+# ----------------------------------------------------------
 # 3. Deploy agent ossec.conf
 # ----------------------------------------------------------
 - name: Deploy agent ossec.conf
