@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Blue Ubuntu workstations only, in the Main (Grey) project. No other hosts are defined here.
-# Security groups are not managed in Terraform yet — adjust in Horizon if needed.
+# Security groups: default + Blueteam group from blueteam_security_group_id (override in tfvars).
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TFVARS_FILE="$ROOT/project_ids.auto.tfvars"
