@@ -1,1 +1,0 @@
-../../tofu/workstations_main_nat.tf
