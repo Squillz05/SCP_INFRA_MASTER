@@ -74,6 +74,17 @@
     update_cache: true
 
 # 3. Run Wazuh all-in-one install script (idempotent via component check)
+- name: Stop existing Wazuh services before reinstall
+  ansible.builtin.shell: |
+    /var/ossec/bin/wazuh-control stop 2>/dev/null || true
+    systemctl stop wazuh-manager 2>/dev/null || true
+    systemctl stop wazuh-indexer 2>/dev/null || true
+    systemctl stop wazuh-dashboard 2>/dev/null || true
+    systemctl stop filebeat 2>/dev/null || true
+  changed_when: false
+  failed_when: false
+  when: not (unscored_wazuh_already_installed.stat.exists | bool)
+
 - name: Download Wazuh install script
   ansible.builtin.get_url:
     url: "https://packages.wazuh.com/{{ unscored_wazuh_version }}/wazuh-install.sh"
